@@ -65,8 +65,9 @@ sub compile
     if ($lambda) {
         &$lambda($task);
     }
-
-    push($mod->{INPUTS}, $task);
+    $task->emit();
+    
+    push($mod->{INPUTS}, $task->outputFile);
     
     return $task;
 }
@@ -84,16 +85,22 @@ sub staticLibrary
     if ($mod->{OUTPUT}) {
         die "Output already selected: $mod->{OUTPUT}";
     }
+    if (!$outputFile) {
+        die "You must specify an outputFile parameter.";
+    }
 
     my $task = new StaticLibraryTask("outputFileName" => $outputFile, 'outputDir' => $mod->outputDir);
     $mod->staticLibraryOverride($task);
     if ($lambda) {
         &$lambda($task);
     }
-
-    # TODO: add all INPUTS
+    foreach (@{$mod->{INPUTS}}) {
+        my $input = $_;
+        push($task->{INPUTS}, $input);
+    }
+    $task->emit();
     
-    $mod->{OUTPUT} = $task;
+    $mod->{OUTPUT} = $outputFile;
     return $task;
 }
 
@@ -112,8 +119,11 @@ sub sharedLibrary
     if ($lambda) {
         &$lambda($task);
     }
-    
-    # TODO: add all INPUTS
+    foreach (@{$mod->{INPUTS}}) {
+        my $input = $_;
+        push($task->{INPUTS}, $input);
+    }
+    $task->emit();
     
     $mod->{OUTPUT} = $task;
     return $task;
@@ -134,8 +144,11 @@ sub executable
     if ($lambda) {
         &$lambda($task);
     }
-
-    # TODO: add all INPUTS
+    foreach (@{$mod->{INPUTS}}) {
+        my $input = $_;
+        push($task->{INPUTS}, $input);
+    }
+    $task->emit();
     
     $mod->{OUTPUT} = $task;
     return $task;

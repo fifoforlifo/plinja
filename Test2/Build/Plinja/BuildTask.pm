@@ -11,15 +11,8 @@ sub BUILD
     $task->{forcedOutputs} = [];
 }
 
-# Should return the path for the primary output.
-# This is used as a base-name for other build tracking files.
-sub outputBasePath
-{
-    die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
-}
-
-# Should return a string containing a shell script that can perform the task.
-sub createTaskScriptStr
+# Should emit ninja build directives.
+sub emit
 {
     die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
 }

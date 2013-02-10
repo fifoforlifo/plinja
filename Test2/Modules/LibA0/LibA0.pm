@@ -1,4 +1,4 @@
-package LibA1;
+package LibA0;
 use Mouse;
 use File::Basename;
 use File::Spec;
@@ -28,10 +28,10 @@ sub addToGraph_cppModule
 {
     my $mod = shift;
 
-    $mod->compile("Source/a0.cpp");
-    $mod->compile("Source/a1.cpp");
-    $mod->compile("Source/a2.cpp");
-    $mod->compile("Source/a3.cpp");
+    $mod->compile("Source/a0_0.cpp");
+    $mod->compile("Source/a0_1.cpp");
+    $mod->compile("Source/a0_2.cpp");
+    $mod->compile("Source/a0_3.cpp");
     $mod->staticLibrary("myLib.a");
 }
 

@@ -39,4 +39,13 @@ sub outputFile
     return $outfile;
 }
 
+sub emit
+{
+    my $task = shift;
+
+    my $outputFile = $task->outputFile;
+    my $sourceFile = $task->sourceFile;
+    print("$outputFile: $sourceFile\n");
+}
+
 1;

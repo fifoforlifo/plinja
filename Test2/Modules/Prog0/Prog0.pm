@@ -1,4 +1,4 @@
-package MyExe;
+package Prog0;
 use Mouse;
 use File::Basename;
 use File::Spec;
@@ -24,9 +24,9 @@ sub addToGraph_cppModule
 {
     my $mod = shift;
 
-    my $myLib = $mod->moduleMan->gorcModule('MyLib', $mod->variant);
+    my $libA0 = $mod->moduleMan->gorcModule('LibA0', $mod->variant);
 
-    $mod->addStaticLibrary($myLib->{OUTPUT});
+    $mod->addStaticLibrary($libA0->{OUTPUT});
     $mod->compile("Source/e0.cpp");
     $mod->compile("Source/e1.cpp");
     $mod->compile("Source/e2.cpp");
@@ -36,11 +36,6 @@ sub addToGraph_cppModule
             push($task->includePaths, $rootPaths{'Boost'});
         });
     $mod->executable("my.exe");
-    # TODO: remove -- print inputs
-    foreach (@{$mod->{INPUTS}}) {
-        my $outfile = $_->outputFile;
-        print "inputs: $outfile\n";
-    }
 }
 
 sub compileOverride

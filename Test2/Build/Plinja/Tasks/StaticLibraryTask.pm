@@ -30,4 +30,17 @@ sub outputFile
     return $outfile;
 }
 
+sub emit
+{
+    my $task = shift;
+    my $fh = shift;
+
+    my $outputFile = $task->outputFile;
+    print("$outputFile: \\\n");
+    foreach (@{$task->inputs}) {
+        my $input = $_;
+        print("  $input \\\n");
+    }
+}
+
 1;
