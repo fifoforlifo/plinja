@@ -11,7 +11,7 @@ sub BUILD
 {
     my $mod = shift;
     my $variantStr = $mod->variant->str;
-    $mod->{OUTPUT_DIR} = File::Spec->catdir(dirname(__FILE__), "Built", $variantStr);
+    $mod->{OUTPUT_DIR} = File::Spec->catdir($rootPaths{'Built'}, $rootPaths{"Prog0_rel"}, $variantStr);
 }
 
 sub outputDir
@@ -25,8 +25,10 @@ sub addToGraph_cppModule
     my $mod = shift;
 
     my $libA0 = $mod->moduleMan->gorcModule('LibA0', $mod->variant);
+    my $libA1 = $mod->moduleMan->gorcModule('LibA1', $mod->variant);
 
-    $mod->addStaticLibrary($libA0->{OUTPUT});
+    $mod->addStaticLibrary($libA0->outputFile);
+    $mod->addStaticLibrary($libA1->outputFile);
     $mod->compile("Source/e0.cpp");
     $mod->compile("Source/e1.cpp");
     $mod->compile("Source/e2.cpp");
@@ -35,7 +37,7 @@ sub addToGraph_cppModule
             my $task = shift;
             push($task->includePaths, $rootPaths{'Boost'});
         });
-    $mod->executable("my.exe");
+    $mod->executable("prog0");
 }
 
 sub compileOverride

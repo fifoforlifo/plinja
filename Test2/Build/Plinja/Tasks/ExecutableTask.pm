@@ -4,7 +4,7 @@ use BuildTask;
 
 extends BuildTask;
 
-has outputFile => (is => 'ro');
+has outputFileName => (is => 'ro');
 has outputDir => (is => 'ro');
 
 sub BUILD
