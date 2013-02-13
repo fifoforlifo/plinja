@@ -3,19 +3,24 @@ use Mouse;
 use File::Basename;
 use File::Spec;
 use BuildTask;
+use Carp;
 
 extends BuildTask;
 
 has sourceFile => (is => 'ro');
-has outputDir => (is => 'ro');
+has objectFile => (is => 'ro');
+has workingDir => (is => 'ro');
 has optLevel => (is => 'rw');
 has debugLevel => (is => 'rw');
 
 sub BUILD
 {
     my $task = shift;
-    if (!$task->outputDir) {
-        die "outputDir not defined";
+    if (!$task->objectFile) {
+        confess "objectFile not defined";
+    }
+    if (!$task->workingDir) {
+        confess "workingDir not defined";
     }
     $task->{INCLUDE_PATHS} = [];
 }
@@ -29,14 +34,7 @@ sub includePaths
 sub outputFile
 {
     my $task = shift;
-    my $outfile;
-    if ($task->outputDir) {
-        $outfile = File::Spec->join($task->outputDir, $task->sourceFile) . ".o";
-    }
-    else {
-        $outfile = File::Spec->join(dirname(__FILE__), $task->sourceFile) . ".o";
-    }
-    return $outfile;
+    return $task->objectFile;
 }
 
 sub emit

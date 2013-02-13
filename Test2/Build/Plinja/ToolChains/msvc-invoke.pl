@@ -1,20 +1,17 @@
-# Usage:
-#   msvc-invoke  $srcFile  $depsFile  $$vsInstallDir  $arch  $options
-
 use strict;
 use English;
 use File::Slurp;
+use Carp;
 
-my ($srcFile, $objFile, $depsFile, $logFile, $vsInstallDir, $arch, $rspFile) = @ARGV;
+my ($workingDir, $srcFile, $objFile, $depsFile, $logFile, $vsInstallDir, $arch, $rspFile) = @ARGV;
 
 # validate environment
 die "msvc is only usable on windows" if ($OSNAME ne "MSWin32");
-die "missing srcFile arg" if (!$srcFile);
-die "missing objFile arg" if (!$objFile);
-die "missing depsFile arg" if (!$depsFile);
-die "missing vsInstallDir arg" if (!$vsInstallDir);
-die "missing arch arg" if (!$arch);
-die "missing rspFile arg" if (!$rspFile);
+if ($#ARGV != 8) {
+    carp "invalid invocation, see script for required argument list";
+}
+
+chdir($workingDir);
 
 my $oldPath = $ENV{"PATH"};
 $ENV{"PATH"} = "$vsInstallDir\\VC\\bin;$vsInstallDir\\Common7\\IDE;$oldPath";

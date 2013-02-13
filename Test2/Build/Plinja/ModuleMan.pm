@@ -1,5 +1,8 @@
 package ModuleMan;
 use Mouse;
+use File::Basename;
+use Module::Util qw(find_installed);
+use RootPaths;
 
 sub getModule
 {
@@ -22,7 +25,10 @@ sub gorcModule
     # pull module into scope as needed
     eval "require $moduleName";
 
-    $mod = $moduleName->new('moduleMan' => $moduleMan, 'variant' => $variant);
+    $mod = $moduleName->new(moduleMan => $moduleMan, variant => $variant);
+    $mod->{MODULE_DIR} = dirname(find_installed($moduleName));
+    $mod->{OUTPUT_DIR} = File::Spec->catdir($rootPaths{'Built'}, $rootPaths{$moduleName . "_rel"}, $variant->str);
+
     $moduleMan->{names}->{$moduleName}->{$variant->str} = $mod;
     $mod->addToGraph();
     return $mod;

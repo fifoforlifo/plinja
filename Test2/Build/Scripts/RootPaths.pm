@@ -9,7 +9,6 @@ use Exporter;
 %rootPaths = ();
 
 my $rootDir = dirname(dirname(abs_path(dirname(__FILE__)))); # = __DIRECTORY__ + "../.."
-print("rootDir = $rootDir\n");
 
 # addModuleDir(name, relPath, absPath = nil)
 # relPath is the "home" directory for the module.  This is also used to compute the output path within 'Built'.

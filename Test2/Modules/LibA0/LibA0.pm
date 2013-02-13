@@ -11,7 +11,6 @@ sub BUILD
 {
     my $mod = shift;
     my $variantStr = $mod->variant->str;
-    $mod->{OUTPUT_DIR} = File::Spec->catdir($rootPaths{'Built'}, $rootPaths{"LibA0_rel"}, $variantStr);
 }
 
 sub outputDir

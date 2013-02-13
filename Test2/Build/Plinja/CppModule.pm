@@ -1,4 +1,5 @@
 package CppModule;
+
 use English;
 use Mouse;
 use BuildModule;
@@ -6,6 +7,9 @@ use CppTask;
 use StaticLibraryTask;
 use SharedLibraryTask;
 use ExecutableTask;
+use File::Spec;
+use File::Basename;
+
 
 extends BuildModule;
 
@@ -59,7 +63,16 @@ sub compile
     my $sourceFile = shift;
     my $lambda = shift;
 
-    my $task = CppTask->new('sourceFile' => $sourceFile, 'outputDir' => $mod->outputDir);
+    my $objectFile;
+    if (File::Spec->file_name_is_absolute($sourceFile)) {
+        $objectFile = File::Spec->catfile($mod->{OUTPUT_DIR}, basename($sourceFile) . ".o");
+    }
+    else {
+        $objectFile = File::Spec->catfile($mod->{OUTPUT_DIR}, $sourceFile . ".o");
+        $sourceFile = File::Spec->catfile($mod->{MODULE_DIR}, $sourceFile);
+    }
+
+    my $task = CppTask->new(sourceFile => $sourceFile, objectFile => $objectFile, workingDir => $mod->{MODULE_DIR});
     $mod->compileOverride($task);
     if ($lambda) {
         &$lambda($task);
