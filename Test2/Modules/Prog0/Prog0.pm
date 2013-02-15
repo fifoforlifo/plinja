@@ -28,10 +28,10 @@ sub addToGraph_cppModule
 
     $mod->addStaticLibrary($libA0->outputFile);
     $mod->addStaticLibrary($libA1->outputFile);
-    $mod->compile("Source/e0.cpp");
-    $mod->compile("Source/e1.cpp");
-    $mod->compile("Source/e2.cpp");
-    $mod->compile("Source/e3.cpp",
+    $mod->compile("Source/e0_0.cpp");
+    $mod->compile("Source/e0_1.cpp");
+    $mod->compile("Source/e0_2.cpp");
+    $mod->compile("Source/e0_3.cpp",
         sub {
             my $task = shift;
             push($task->includePaths, $rootPaths{'Boost'});

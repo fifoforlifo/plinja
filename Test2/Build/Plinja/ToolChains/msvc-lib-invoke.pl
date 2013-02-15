@@ -3,11 +3,11 @@ use English;
 use File::Slurp;
 use Carp;
 
-my ($workingDir, $srcFile, $objFile, $depFile, $logFile, $vsInstallDir, $arch, $rspFile) = @ARGV;
+my ($workingDir, $logFile, $vsInstallDir, $arch, $rspFile) = @ARGV;
 
 # validate environment
 die "msvc is only usable on windows" if ($OSNAME ne "MSWin32");
-if (scalar(@ARGV) != 8) {
+if (scalar(@ARGV) != 5) {
     carp "invalid invocation, see script for required argument list";
 }
 if (!($arch eq "x86" || $arch eq "amd64")) {
@@ -40,37 +40,9 @@ elsif ($arch eq "amd64") {
     $ENV{"LIB"} = "$vsInstallDir\\VC\\lib\\amd64";
 }
 
-sub GenerateDeps
+sub CreateLib()
 {
-    my $ppFile = "$objFile.pp";
-    my $siFile = "$objFile.si";
-    my $cmd = "cl /showIncludes /E \"$srcFile\" \"\@$rspFile\"  1>\"$ppFile\" 2>\"$siFile\"";
-    my $exitCode = system($cmd);
-    if ($exitCode) {
-        open(my $LOG, ">$logFile");
-        my $log = read_file($siFile);
-        print($LOG $log);
-        print(STDERR $log);
-        exit 1;
-    }
-    
-    open(my $DEPS, ">$depFile") or die "failed to open depFile: $depFile";
-    open(my $SI, "<$siFile") or die "failed to open showIncludes file: $siFile";
-    print($DEPS "$objFile: \\\n");
-    while (my $line = <$SI>) {
-        if ($line =~ "Note: including file: ([ ]*)(.*)") {
-            print($DEPS "$2 \\\n");
-        }
-    }
-    print("\n");
-    close($SI);
-    close($DEPS);
-}
-
-sub Compile()
-{
-    my $cmd = "cl \"$srcFile\" \"\@$rspFile\" \"/Fo$objFile\" > \"$logFile\" 2>&1";
-    print $cmd;
+    my $cmd = "lib \@$rspFile > \"$logFile\" 2>&1";
     my $exitCode = system($cmd);
     if ($exitCode) {
         my $log = read_file($logFile);
@@ -79,7 +51,6 @@ sub Compile()
     }
 }
 
-GenerateDeps();
-Compile();
+CreateLib();
 
 exit 0;

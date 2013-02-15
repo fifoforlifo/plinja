@@ -39,11 +39,8 @@ sub outputFile
 
 sub emit
 {
-    my $task = shift;
-
-    my $outputFile = $task->outputFile;
-    my $sourceFile = $task->sourceFile;
-    print("$outputFile: $sourceFile\n");
+    my ($task, $toolChain, $FH) = @_;
+    $toolChain->emitCompile($FH, $task);
 }
 
 1;

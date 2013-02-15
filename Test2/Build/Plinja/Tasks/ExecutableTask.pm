@@ -6,6 +6,7 @@ extends BuildTask;
 
 has outputFileName => (is => 'ro');
 has outputDir => (is => 'ro');
+has workingDir => (is => 'ro');
 
 sub BUILD
 {
@@ -31,14 +32,8 @@ sub outputFile
 
 sub emit
 {
-    my $task = shift;
-
-    my $outputFile = $task->outputFile;
-    print("$outputFile: \\\n");
-    foreach (@{$task->inputs}) {
-        my $input = $_;
-        print("  $input \\\n");
-    }
+    my ($task, $toolChain, $FH) = @_;
+    $toolChain->emitExecutable($FH, $task);
 }
 
 1;

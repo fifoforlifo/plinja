@@ -7,8 +7,8 @@ sub BUILD
 {
     my $variant = shift;
     my $fieldDefs = $variant->getFieldDefs();
-    my @variantParts = split(".", $variant->str);
-    for (my $i = 0; $i < scalar(@variantParts); $i++) {
+    my @variantParts = split("[.]", $variant->str);
+    for (my $i = 0; $i <= $#variantParts; $i++) {
         my $fieldVal     = $variantParts[$i];
         my $fieldName    = @$fieldDefs[$i * 2 + 0];
         my $fieldOptions = @$fieldDefs[$i * 2 + 1];

@@ -4,11 +4,13 @@ use File::Basename;
 use Module::Util qw(find_installed);
 use RootPaths;
 
+has 'FH' => (is => 'ro');
+
 sub getModule
 {
     my ($moduleMan, $moduleName, $variant) = @_;
 
-    my $mod = $moduleMan->{names}->{$moduleName}->{$variant->str};
+    my $mod = $moduleMan->{modules}->{$moduleName}->{$variant->str};
     return $mod;
 }
 
@@ -29,9 +31,37 @@ sub gorcModule
     $mod->{MODULE_DIR} = dirname(find_installed($moduleName));
     $mod->{OUTPUT_DIR} = File::Spec->catdir($rootPaths{'Built'}, $rootPaths{$moduleName . "_rel"}, $variant->str);
 
-    $moduleMan->{names}->{$moduleName}->{$variant->str} = $mod;
+    $moduleMan->{modules}->{$moduleName}->{$variant->str} = $mod;
     $mod->addToGraph();
     return $mod;
+}
+
+sub getToolChain
+{
+    my ($moduleMan, $toolChainName) = @_;
+    my $toolChain = $moduleMan->{toolChains}->{$toolChainName};
+    return $toolChain;
+}
+
+sub addToolChain
+{
+    my ($moduleMan, $toolChain) = @_;
+    
+    if ($moduleMan->getToolChain($toolChain->name)) {
+        confess "$toolChain already exists";
+    }
+
+    $moduleMan->{toolChains}->{$toolChain->name} = $toolChain;
+}
+
+sub emitRules
+{
+    my ($moduleMan, $FH) = @_;
+
+    foreach my $toolChainName (keys %{$moduleMan->{toolChains}}) {
+        my $toolChain = $moduleMan->{toolChains}->{$toolChainName};
+        $toolChain->emitRules($moduleMan->FH);
+    }
 }
 
 1;

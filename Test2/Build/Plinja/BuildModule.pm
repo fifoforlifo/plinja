@@ -13,11 +13,6 @@ sub moduleName
     die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
 }
 
-sub defaultTarget
-{
-    die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
-}
-
 sub addToGraph_module
 {
     die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);

@@ -9,11 +9,36 @@ use RootPaths;
 # common build stuff
 use ModuleMan;
 use MyVariant;
+use MsvcToolChain;
 # specific projects to build from the root
 use Prog0;
 
-my $moduleMan = ModuleMan->new();
 
-# TODO: if variant was passed on commandline, use it instead of this default
-my $variant = MyVariant->new(str => "msvc10-x86.dbg");
-my $exe = $moduleMan->gorcModule('Prog0', $variant);
+# A single build.ninja shall hold all rules + build commands.
+mkdir($rootPaths{'Built'});
+open(my $FH, ">Built/build.ninja");
+
+
+# TODO: use value from commandline if available
+my $config = 'dbg';
+my $variant_x86   = MyVariant->new(str => "msvc10_x86.$config");
+my $variant_amd64 = MyVariant->new(str => "msvc10_amd64.$config");
+
+# Create the module manager, which tracks all modules (projects) being built.
+my $moduleMan = ModuleMan->new(FH => $FH);
+
+# Create toolchains.
+my $msvc10_x86   = MsvcToolChain->new(name => 'msvc10_x86',   vsInstallDir => $rootPaths{'msvc10_root'}, arch => 'x86');
+my $msvc10_amd64 = MsvcToolChain->new(name => 'msvc10_amd64', vsInstallDir => $rootPaths{'msvc10_root'}, arch => 'amd64');
+$moduleMan->addToolChain($msvc10_x86);
+$moduleMan->addToolChain($msvc10_amd64);
+
+$moduleMan->emitRules();
+
+
+# Add top-level target modules.
+my $prog0_x86   = $moduleMan->gorcModule('Prog0', $variant_x86);
+my $prog0_amd64 = $moduleMan->gorcModule('Prog0', $variant_amd64);
+
+
+print($FH "\n\n");

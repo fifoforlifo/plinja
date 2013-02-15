@@ -13,10 +13,18 @@ use File::Basename;
 
 extends BuildModule;
 
+
 sub BUILD
 {
     my $mod = shift;
     $mod->{INPUTS} = [];
+    
+    my $toolChainName = $mod->variant->{toolChain};
+    my $toolChain = $mod->moduleMan->getToolChain($toolChainName);
+    if (!$toolChain) {
+        confess "ToolChain \"$toolChainName\" does not exist.";
+    }
+    $mod->{toolChain} = $toolChain;
 }
 
 # Should return a string containing the output directory for the current module and variant.
@@ -77,7 +85,7 @@ sub compile
     if ($lambda) {
         &$lambda($task);
     }
-    $task->emit();
+    $task->emit($mod->{toolChain}, $mod->moduleMan->FH);
     
     push($mod->{INPUTS}, $task->outputFile);
     
@@ -108,7 +116,7 @@ sub staticLibrary
         $outputFileName = 'lib' . $outputFileName . '.a';
     }
     
-    my $task = new StaticLibraryTask(outputFileName => $outputFileName, 'outputDir' => $mod->outputDir);
+    my $task = new StaticLibraryTask(outputFileName => $outputFileName, 'outputDir' => $mod->outputDir, workingDir => $mod->{MODULE_DIR});
     $mod->staticLibraryOverride($task);
     if ($lambda) {
         &$lambda($task);
@@ -117,7 +125,7 @@ sub staticLibrary
         my $input = $_;
         push($task->{INPUTS}, $input);
     }
-    $task->emit();
+    $task->emit($mod->{toolChain}, $mod->moduleMan->FH);
     
     $mod->{OUTPUT_FILE} = $task->outputFile;
     return $task;
@@ -147,7 +155,7 @@ sub sharedLibrary
         $outputFileName = 'lib' . $outputFileName . '.so';
     }
     
-    my $task = new SharedLibraryTask(outputFileName => $outputFileName, outputDir => $mod->outputDir);
+    my $task = new SharedLibraryTask(outputFileName => $outputFileName, outputDir => $mod->outputDir, workingDir => $mod->{MODULE_DIR});
     $mod->sharedLibraryOverride($task);
     if ($lambda) {
         &$lambda($task);
@@ -156,7 +164,7 @@ sub sharedLibrary
         my $input = $_;
         push($task->{INPUTS}, $input);
     }
-    $task->emit();
+    $task->emit($mod->{toolChain}, $mod->moduleMan->FH);
 
     $mod->{OUTPUT_FILE} = $task->outputFile;
     return $task;
@@ -186,7 +194,7 @@ sub executable
         # just use the plain name
     }
 
-    my $task = new ExecutableTask(outputFileName => $outputFileName, outputDir => $mod->outputDir);
+    my $task = new ExecutableTask(outputFileName => $outputFileName, outputDir => $mod->outputDir, workingDir => $mod->{MODULE_DIR});
     $mod->executableOverride($task);
     if ($lambda) {
         &$lambda($task);
@@ -195,7 +203,7 @@ sub executable
         my $input = $_;
         push($task->{INPUTS}, $input);
     }
-    $task->emit();
+    $task->emit($mod->{toolChain}, $mod->moduleMan->FH);
     
     $mod->{OUTPUT_FILE} = $task->outputFile;
     return $task;
