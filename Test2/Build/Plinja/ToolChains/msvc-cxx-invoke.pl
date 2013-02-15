@@ -70,7 +70,6 @@ sub GenerateDeps
 sub Compile()
 {
     my $cmd = "cl \"$srcFile\" \"\@$rspFile\" \"/Fo$objFile\" > \"$logFile\" 2>&1";
-    print $cmd;
     my $exitCode = system($cmd);
     if ($exitCode) {
         my $log = read_file($logFile);

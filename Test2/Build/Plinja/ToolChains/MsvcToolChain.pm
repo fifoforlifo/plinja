@@ -67,7 +67,7 @@ sub emitCompile
     print($FH "  LOG_FILE = ${\$task->outputFile}.log\n");
     print($FH "  RSP_FILE = ${\$task->outputFile}.rsp\n");
     print($FH "  rspfile  = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile_content = /c /Od\n");
+    print($FH "  rspfile_content = /nologo /c /Od\n");
 }
 
 sub emitStaticLibrary
@@ -94,7 +94,7 @@ sub emitStaticLibrary
     print($FH "  LOG_FILE = ${\$task->outputFile}.log\n");
     print($FH "  RSP_FILE = ${\$task->outputFile}.rsp\n");
     print($FH "  rspfile  = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile_content =");
+    print($FH "  rspfile_content = /nologo /OUT:${\$task->outputFile}");
         foreach (@{$task->inputs}) {
             my $input = $_;
             print($FH " $input");
@@ -110,11 +110,15 @@ sub emitSharedLibrary
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
     
-    my $outputFile = ninjaEscapePath($task->outputFile);
-    my $logFile    = ninjaEscapePath($task->outputFile . ".log");
+    my $outputFile  = ninjaEscapePath($task->outputFile);
+    my $libraryFile = "";
+    if ($task->outputFile ne $task->libraryFile) {
+        $libraryFile = ninjaEscapePath($task->libraryFile);
+    }
+    my $logFile     = ninjaEscapePath($task->outputFile . ".log");
 
     print($FH "\n");
-    print($FH "build $outputFile $logFile : ${name}_link ");
+    print($FH "build $outputFile $libraryFile $logFile : ${name}_link ");
         if (scalar(@{$task->inputs})) {
             print($FH "|");
         }
@@ -127,10 +131,14 @@ sub emitSharedLibrary
     print($FH "  LOG_FILE = ${\$task->outputFile}.log\n");
     print($FH "  RSP_FILE = ${\$task->outputFile}.rsp\n");
     print($FH "  rspfile  = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile_content =");
+    print($FH "  rspfile_content = /nologo /DLL /OUT:${\$task->outputFile}");
+        foreach (@{$task->libPaths}) {
+            my $libPath = $_;
+            print($FH " \"/LIBPATH:$libPath\"");
+        }
         foreach (@{$task->inputs}) {
             my $input = $_;
-            print($FH " $input");
+            print($FH " \"$input\"");
         }
         print($FH "\n");
     print($FH "\n");
@@ -160,10 +168,14 @@ sub emitExecutable
     print($FH "  LOG_FILE = ${\$task->outputFile}.log\n");
     print($FH "  RSP_FILE = ${\$task->outputFile}.rsp\n");
     print($FH "  rspfile  = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile_content =");
+    print($FH "  rspfile_content = /nologo /OUT:${\$task->outputFile}");
+        foreach (@{$task->libPaths}) {
+            my $libPath = $_;
+            print($FH " \"/LIBPATH:$libPath\"");
+        }
         foreach (@{$task->inputs}) {
             my $input = $_;
-            print($FH " $input");
+            print($FH " \"$input\"");
         }
         print($FH "\n");
     print($FH "\n");

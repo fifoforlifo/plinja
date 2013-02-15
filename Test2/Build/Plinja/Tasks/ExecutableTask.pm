@@ -4,17 +4,14 @@ use BuildTask;
 
 extends BuildTask;
 
-has outputFileName => (is => 'ro');
-has outputDir => (is => 'ro');
+has outputFile => (is => 'ro');
 has workingDir => (is => 'ro');
 
 sub BUILD
 {
     my $task = shift;
-    if (!$task->outputDir) {
-        die "outputDir not defined";
-    }
     $task->{INPUTS} = [];
+    $task->{LIBPATHS} = [];
 }
 
 sub inputs
@@ -23,11 +20,10 @@ sub inputs
     return $task->{INPUTS};
 }
 
-sub outputFile
+sub libPaths
 {
     my $task = shift;
-    my $outfile = File::Spec->catfile($task->outputDir, $task->outputFileName);
-    return $outfile;
+    return $task->{LIBPATHS};
 }
 
 sub emit

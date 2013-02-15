@@ -9,6 +9,8 @@ use SharedLibraryTask;
 use ExecutableTask;
 use File::Spec;
 use File::Basename;
+use RootPaths;
+use Carp;
 
 
 extends BuildModule;
@@ -36,8 +38,15 @@ sub outputDir
 sub outputFile
 {
     my $mod = shift;
-    die "outputFile not set" if (!$mod->{OUTPUT_FILE});
+    confess "outputFile not set" if (!$mod->{OUTPUT_FILE});
     return $mod->{OUTPUT_FILE};
+}
+
+sub libraryFile
+{
+    my $mod = shift;
+    confess "libraryFile not set" if (!$mod->{OUTPUT_FILE});
+    return $mod->{LIBRARY_FILE};
 }
 
 sub addToGraph_module
@@ -115,8 +124,11 @@ sub staticLibrary
     else {
         $outputFileName = 'lib' . $outputFileName . '.a';
     }
-    
-    my $task = new StaticLibraryTask(outputFileName => $outputFileName, 'outputDir' => $mod->outputDir, workingDir => $mod->{MODULE_DIR});
+
+    my $outputFile = File::Spec->catfile($mod->outputDir, $outputFileName);
+    $mod->{LIBRARY_FILE} = $outputFile;
+
+    my $task = new StaticLibraryTask(outputFile => $outputFile, workingDir => $mod->{MODULE_DIR});
     $mod->staticLibraryOverride($task);
     if ($lambda) {
         &$lambda($task);
@@ -148,21 +160,33 @@ sub sharedLibrary
         die "You must specify an outputFileName parameter.";
     }
 
+    my $outputFile;    
     if ($OSNAME eq "MSWin32") {
-        $outputFileName = $outputFileName . ".dll";
+        $mod->{LIBRARY_FILE} = File::Spec->catfile($mod->outputDir, $outputFileName . ".lib");
+        $outputFile          = File::Spec->catfile($mod->outputDir, $outputFileName . ".dll");
     }
     else {
-        $outputFileName = 'lib' . $outputFileName . '.so';
+        $outputFile          = File::Spec->catfile($mod->outputDir, 'lib' . $outputFileName . '.so');
+        $mod->{LIBRARY_FILE} = $outputFile;
     }
-    
-    my $task = new SharedLibraryTask(outputFileName => $outputFileName, outputDir => $mod->outputDir, workingDir => $mod->{MODULE_DIR});
+
+    my $task = new SharedLibraryTask(outputFile => $outputFile, libraryFile => $mod->{LIBRARY_FILE}, workingDir => $mod->{MODULE_DIR});
     $mod->sharedLibraryOverride($task);
-    if ($lambda) {
-        &$lambda($task);
-    }
     foreach (@{$mod->{INPUTS}}) {
         my $input = $_;
         push($task->{INPUTS}, $input);
+    }
+    # hack
+    if ($OSNAME eq "MSWin32") {
+        if ($mod->variant->{toolChain} =~ "x86") {
+            push($task->libPaths, $rootPaths{'winsdk'} . "/Lib");
+        }
+        else {
+            push($task->libPaths, $rootPaths{'winsdk'} . "/Lib/x64");
+        }
+    }
+    if ($lambda) {
+        &$lambda($task);
     }
     $task->emit($mod->{toolChain}, $mod->moduleMan->FH);
 
@@ -194,14 +218,25 @@ sub executable
         # just use the plain name
     }
 
-    my $task = new ExecutableTask(outputFileName => $outputFileName, outputDir => $mod->outputDir, workingDir => $mod->{MODULE_DIR});
+    my $outputFile = File::Spec->catfile($mod->outputDir, $outputFileName);
+
+    my $task = new ExecutableTask(outputFile => $outputFile, workingDir => $mod->{MODULE_DIR});
     $mod->executableOverride($task);
-    if ($lambda) {
-        &$lambda($task);
-    }
     foreach (@{$mod->{INPUTS}}) {
         my $input = $_;
-        push($task->{INPUTS}, $input);
+        push($task->inputs, $input);
+    }
+    # hack
+    if ($OSNAME eq "MSWin32") {
+        if ($mod->variant->{toolChain} =~ "x86") {
+            push($task->libPaths, $rootPaths{'winsdk'} . "/Lib");
+        }
+        else {
+            push($task->libPaths, $rootPaths{'winsdk'} . "/Lib/x64");
+        }
+    }
+    if ($lambda) {
+        &$lambda($task);
     }
     $task->emit($mod->{toolChain}, $mod->moduleMan->FH);
     

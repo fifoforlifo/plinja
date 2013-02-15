@@ -35,6 +35,7 @@ addModuleDir("Prog0", "Modules/Prog0");
 $rootPaths{'msvc9_root'} = 'C:\Program Files (x86)\Microsoft Visual Studio 9.0';
 $rootPaths{'msvc10_root'} = 'C:\Program Files (x86)\Microsoft Visual Studio 10.0';
 $rootPaths{'msvc11_root'} = 'C:\Program Files (x86)\Microsoft Visual Studio 11.0';
+$rootPaths{'winsdk'} = 'C:\Program Files\Microsoft SDKs\Windows\v7.0';
 
 # This is the root directory where all out-of-source builds go.
 $rootPaths{'Built'} = "$rootDir/Built";

@@ -26,8 +26,8 @@ sub addToGraph_cppModule
     my $libA0 = $mod->moduleMan->gorcModule('LibA0', $mod->variant);
     my $libA1 = $mod->moduleMan->gorcModule('LibA1', $mod->variant);
 
-    $mod->addStaticLibrary($libA0->outputFile);
-    $mod->addStaticLibrary($libA1->outputFile);
+    $mod->addStaticLibrary($libA0->libraryFile);
+    $mod->addStaticLibrary($libA1->libraryFile);
     $mod->compile("Source/e0_0.cpp");
     $mod->compile("Source/e0_1.cpp");
     $mod->compile("Source/e0_2.cpp");
