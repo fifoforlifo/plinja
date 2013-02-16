@@ -19,7 +19,7 @@ sub outputDir
     return $mod->{OUTPUT_DIR};
 }
 
-sub addToGraph_cppModule
+sub define
 {
     my $mod = shift;
 

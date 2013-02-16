@@ -13,7 +13,7 @@ sub moduleName
     die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
 }
 
-sub addToGraph_module
+sub define
 {
     die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
 }
@@ -26,7 +26,7 @@ sub addToGraph
     }
     $mod->{addedToGraph} = 1;
     
-    $mod->addToGraph_module();
+    $mod->define();
 }
 
 1;

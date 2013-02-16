@@ -24,17 +24,17 @@ sub emitRules
     print($FH "rule ${name}_cxx\n");
     print($FH "  depfile = \$DEP_FILE\n");
     print($FH "  command = perl $scriptDir\\msvc-cxx-invoke.pl  \"\$WORKING_DIR\"  \"\$SRC_FILE\"  \"\$OBJ_FILE\"  \"\$DEP_FILE\"  \"\$LOG_FILE\"  \"$vsInstallDir\"  $arch  \"\$RSP_FILE\"  \n");
-    print($FH "  description = ${name}_cxx target \$out\n");
+    print($FH "  description = ${name}_cxx \$DESC\n");
     print($FH "  restat = 1\n");
     print($FH "\n");
     print($FH "rule ${name}_lib\n");
     print($FH "  command = perl $scriptDir\\msvc-lib-invoke.pl  \"\$WORKING_DIR\"  \"\$LOG_FILE\"  \"$vsInstallDir\"  $arch  \"\$RSP_FILE\"  \n");
-    print($FH "  description = ${name}_lib target \$out\n");
+    print($FH "  description = ${name}_lib \$DESC\n");
     print($FH "  restat = 1\n");
     print($FH "\n");
     print($FH "rule ${name}_link\n");
     print($FH "  command = perl $scriptDir\\msvc-link-invoke.pl  \"\$WORKING_DIR\"  \"\$LOG_FILE\"  \"$vsInstallDir\"  $arch  \"\$RSP_FILE\"  \n");
-    print($FH "  description = ${name}_link target \$out\n");
+    print($FH "  description = ${name}_link \$DESC\n");
     print($FH "  restat = 1\n");
     print($FH "\n");
 }
@@ -57,17 +57,20 @@ sub emitCompile
     my $outputFile = ninjaEscapePath($task->outputFile);    
     my $sourceFile = ninjaEscapePath($task->sourceFile);
     my $logFile    = ninjaEscapePath($task->outputFile . ".log");
-    
-    print($FH "\n");
+    my $sourceFileName = basename($task->sourceFile);
+    my $outputFileName = basename($task->outputFile);
+
     print($FH "build $outputFile $logFile : ${name}_cxx  $sourceFile\n");
     print($FH "  WORKING_DIR = ${\$task->workingDir}\n");
-    print($FH "  SRC_FILE = ${\$task->sourceFile}\n");
-    print($FH "  OBJ_FILE = ${\$task->outputFile}\n");
-    print($FH "  DEP_FILE = ${\$task->outputFile}.d\n");
-    print($FH "  LOG_FILE = ${\$task->outputFile}.log\n");
-    print($FH "  RSP_FILE = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile  = ${\$task->outputFile}.rsp\n");
+    print($FH "  SRC_FILE    = ${\$task->sourceFile}\n");
+    print($FH "  OBJ_FILE    = ${\$task->outputFile}\n");
+    print($FH "  DEP_FILE    = ${\$task->outputFile}.d\n");
+    print($FH "  LOG_FILE    = ${\$task->outputFile}.log\n");
+    print($FH "  RSP_FILE    = ${\$task->outputFile}.rsp\n");
+    print($FH "  rspfile     = ${\$task->outputFile}.rsp\n");
     print($FH "  rspfile_content = /nologo /c /Od\n");
+    print($FH "  DESC        = $sourceFileName -> $outputFileName\n");
+    print($FH "\n");
 }
 
 sub emitStaticLibrary
@@ -79,6 +82,7 @@ sub emitStaticLibrary
     
     my $outputFile = ninjaEscapePath($task->outputFile);
     my $logFile    = ninjaEscapePath($task->outputFile . ".log");
+    my $outputFileName = basename($task->outputFile);
     
     print($FH "\n");
     print($FH "build $outputFile $logFile : ${name}_lib ");
@@ -91,15 +95,16 @@ sub emitStaticLibrary
         }
         print($FH "\n");
     print($FH "  WORKING_DIR = ${\$task->workingDir}\n");
-    print($FH "  LOG_FILE = ${\$task->outputFile}.log\n");
-    print($FH "  RSP_FILE = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile  = ${\$task->outputFile}.rsp\n");
+    print($FH "  LOG_FILE    = ${\$task->outputFile}.log\n");
+    print($FH "  RSP_FILE    = ${\$task->outputFile}.rsp\n");
+    print($FH "  rspfile     = ${\$task->outputFile}.rsp\n");
     print($FH "  rspfile_content = /nologo /OUT:${\$task->outputFile}");
         foreach (@{$task->inputs}) {
             my $input = $_;
             print($FH " $input");
         }
         print($FH "\n");
+    print($FH "  DESC        = -> $outputFileName\n");
     print($FH "\n");
 }
 
@@ -116,6 +121,7 @@ sub emitSharedLibrary
         $libraryFile = ninjaEscapePath($task->libraryFile);
     }
     my $logFile     = ninjaEscapePath($task->outputFile . ".log");
+    my $outputFileName = basename($task->outputFile);
 
     print($FH "\n");
     print($FH "build $outputFile $libraryFile $logFile : ${name}_link ");
@@ -128,9 +134,9 @@ sub emitSharedLibrary
         }
         print($FH "\n");
     print($FH "  WORKING_DIR = ${\$task->workingDir}\n");
-    print($FH "  LOG_FILE = ${\$task->outputFile}.log\n");
-    print($FH "  RSP_FILE = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile  = ${\$task->outputFile}.rsp\n");
+    print($FH "  LOG_FILE    = ${\$task->outputFile}.log\n");
+    print($FH "  RSP_FILE    = ${\$task->outputFile}.rsp\n");
+    print($FH "  rspfile     = ${\$task->outputFile}.rsp\n");
     print($FH "  rspfile_content = /nologo /DLL /OUT:${\$task->outputFile}");
         foreach (@{$task->libPaths}) {
             my $libPath = $_;
@@ -141,6 +147,7 @@ sub emitSharedLibrary
             print($FH " \"$input\"");
         }
         print($FH "\n");
+    print($FH "  DESC        = -> $outputFileName\n");
     print($FH "\n");
 }
 
@@ -153,6 +160,7 @@ sub emitExecutable
     
     my $outputFile = ninjaEscapePath($task->outputFile);
     my $logFile    = ninjaEscapePath($task->outputFile . ".log");
+    my $outputFileName = basename($task->outputFile);
 
     print($FH "\n");
     print($FH "build $outputFile $logFile : ${name}_link ");
@@ -165,9 +173,9 @@ sub emitExecutable
         }
         print($FH "\n");
     print($FH "  WORKING_DIR = ${\$task->workingDir}\n");
-    print($FH "  LOG_FILE = ${\$task->outputFile}.log\n");
-    print($FH "  RSP_FILE = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile  = ${\$task->outputFile}.rsp\n");
+    print($FH "  LOG_FILE    = ${\$task->outputFile}.log\n");
+    print($FH "  RSP_FILE    = ${\$task->outputFile}.rsp\n");
+    print($FH "  rspfile     = ${\$task->outputFile}.rsp\n");
     print($FH "  rspfile_content = /nologo /OUT:${\$task->outputFile}");
         foreach (@{$task->libPaths}) {
             my $libPath = $_;
@@ -178,6 +186,7 @@ sub emitExecutable
             print($FH " \"$input\"");
         }
         print($FH "\n");
+    print($FH "  DESC        = -> $outputFileName\n");
     print($FH "\n");
 }
 

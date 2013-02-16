@@ -18,7 +18,7 @@ extends BuildModule;
 
 sub BUILD
 {
-    my $mod = shift;
+    my ($mod) = @_;
     $mod->{INPUTS} = [];
     
     my $toolChainName = $mod->variant->{toolChain};
@@ -37,48 +37,33 @@ sub outputDir
 
 sub outputFile
 {
-    my $mod = shift;
+    my ($mod) = @_;
     confess "outputFile not set" if (!$mod->{OUTPUT_FILE});
     return $mod->{OUTPUT_FILE};
 }
 
 sub libraryFile
 {
-    my $mod = shift;
+    my ($mod) = @_;
     confess "libraryFile not set" if (!$mod->{OUTPUT_FILE});
     return $mod->{LIBRARY_FILE};
 }
 
-sub addToGraph_module
-{
-    my $mod = shift;
-    $mod->addToGraph_cppModule();
-}
-
-sub addToGraph_cppModule
-{
-    die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
-}
-
 sub addStaticLibrary
 {
-    my $mod = shift;
-    my $libFile = shift;
-    push($mod->{INPUTS}, $libFile);
+    my ($mod, $libFile) = @_;
+    $mod->addInputFile($libFile);
 }
 
 sub addInputFile
 {
-    my $mod = shift;
-    my $filename = shift;
+    my ($mod, $filename) = @_;
     push($mod->{INPUTS}, $filename);
 }
 
 sub compile
 {
-    my $mod = shift;
-    my $sourceFile = shift;
-    my $lambda = shift;
+    my ($mod, $sourceFile, $lambda) = @_;
 
     my $objectFile;
     if (File::Spec->file_name_is_absolute($sourceFile)) {
@@ -96,8 +81,7 @@ sub compile
     }
     $task->emit($mod->{toolChain}, $mod->moduleMan->FH);
     
-    push($mod->{INPUTS}, $task->outputFile);
-    
+    $mod->addInputFile($task->outputFile);
     return $task;
 }
 

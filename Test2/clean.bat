@@ -1,3 +1,3 @@
 @echo off
-rmdir /S /Q Built
+if EXIST Built  rmdir /S /Q Built
 
