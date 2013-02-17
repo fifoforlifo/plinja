@@ -16,7 +16,8 @@ use Prog0;
 
 # A single build.ninja shall hold all rules + build commands.
 mkdir($rootPaths{'Built'});
-open(my $FH, ">Built/build.ninja");
+my $ninjaFile = dirname(__FILE__) . "/Built/build.ninja";
+open(my $FH, ">$ninjaFile");
 
 
 # TODO: use value from commandline if available
@@ -40,5 +41,6 @@ $moduleMan->emitRules();
 my $prog0_x86   = $moduleMan->gorcModule('Prog0', $variant_x86);
 my $prog0_amd64 = $moduleMan->gorcModule('Prog0', $variant_amd64);
 
+Plinja::emitRegeneratorTarget($FH, $ninjaFile, __FILE__);
 
 print($FH "\n\n");

@@ -2,6 +2,7 @@ package MsvcToolChain;
 use Mouse;
 use ToolChain;
 use File::Basename;
+use Plinja;
 
 extends ToolChain;
 
@@ -39,14 +40,6 @@ sub emitRules
     print($FH "\n");
 }
 
-sub ninjaEscapePath
-{
-    my $str = shift;
-    $str =~ s/:/\$\:/;
-    $str =~ s/ /\$ /;
-    return $str;
-}
-
 sub emitCompile
 {
     my ($toolChain, $FH, $task) = @_;
@@ -54,9 +47,9 @@ sub emitCompile
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
     
-    my $outputFile = ninjaEscapePath($task->outputFile);    
-    my $sourceFile = ninjaEscapePath($task->sourceFile);
-    my $logFile    = ninjaEscapePath($task->outputFile . ".log");
+    my $outputFile = Plinja::ninjaEscapePath($task->outputFile);    
+    my $sourceFile = Plinja::ninjaEscapePath($task->sourceFile);
+    my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $sourceFileName = basename($task->sourceFile);
     my $outputFileName = basename($task->outputFile);
 
@@ -80,8 +73,8 @@ sub emitStaticLibrary
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
     
-    my $outputFile = ninjaEscapePath($task->outputFile);
-    my $logFile    = ninjaEscapePath($task->outputFile . ".log");
+    my $outputFile = Plinja::ninjaEscapePath($task->outputFile);
+    my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
     
     print($FH "\n");
@@ -90,7 +83,7 @@ sub emitStaticLibrary
             print($FH "|");
         }
         foreach (@{$task->inputs}) {
-            my $input = ninjaEscapePath($_);
+            my $input = Plinja::ninjaEscapePath($_);
             print($FH " $input");
         }
         print($FH "\n");
@@ -115,12 +108,12 @@ sub emitSharedLibrary
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
     
-    my $outputFile  = ninjaEscapePath($task->outputFile);
+    my $outputFile  = Plinja::ninjaEscapePath($task->outputFile);
     my $libraryFile = "";
     if ($task->outputFile ne $task->libraryFile) {
-        $libraryFile = ninjaEscapePath($task->libraryFile);
+        $libraryFile = Plinja::ninjaEscapePath($task->libraryFile);
     }
-    my $logFile     = ninjaEscapePath($task->outputFile . ".log");
+    my $logFile     = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
 
     print($FH "\n");
@@ -129,7 +122,7 @@ sub emitSharedLibrary
             print($FH "|");
         }
         foreach (@{$task->inputs}) {
-            my $input = ninjaEscapePath($_);
+            my $input = Plinja::ninjaEscapePath($_);
             print($FH " $input");
         }
         print($FH "\n");
@@ -158,8 +151,8 @@ sub emitExecutable
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
     
-    my $outputFile = ninjaEscapePath($task->outputFile);
-    my $logFile    = ninjaEscapePath($task->outputFile . ".log");
+    my $outputFile = Plinja::ninjaEscapePath($task->outputFile);
+    my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
 
     print($FH "\n");
@@ -168,7 +161,7 @@ sub emitExecutable
             print($FH "|");
         }
         foreach (@{$task->inputs}) {
-            my $input = ninjaEscapePath($_);
+            my $input = Plinja::ninjaEscapePath($_);
             print($FH " $input");
         }
         print($FH "\n");
