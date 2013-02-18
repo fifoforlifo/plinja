@@ -1,5 +1,6 @@
 package Variant;
 use Mouse;
+use Carp;
 
 has str => (is => 'ro', isa => 'Str');
 
@@ -19,7 +20,7 @@ sub BUILD
                 my $fieldOption = $_;
                 print "    $fieldOption\n";
             }
-            die;
+            confess;
         }
         $variant->{$fieldName} = $fieldVal;
     }
@@ -27,7 +28,7 @@ sub BUILD
 }
 
 # Should return an array containing fieldName => [ field_option ].
-# For example, ['os' => ['win32', 'linux'], 'arch' => ['x86', 'amd64', 'arm32'], 'config' => ['dbg', 'rel']].
+# For example, ['toolchain' => ['msvc', 'gcc'], 'arch' => ['x86', 'amd64'], 'config' => ['dbg', 'rel']].
 sub getFieldDefs
 {
     die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);

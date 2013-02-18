@@ -3,21 +3,9 @@ use Mouse;
 use File::Basename;
 use File::Spec;
 use RootPaths;
-use CppModule;
+use CppModuleEx;
 
-extends CppModule;
-
-sub BUILD
-{
-    my $mod = shift;
-    my $variantStr = $mod->variant->str;
-}
-
-sub outputDir
-{
-    my $mod = shift;
-    return $mod->{OUTPUT_DIR};
-}
+extends CppModuleEx;
 
 sub define
 {

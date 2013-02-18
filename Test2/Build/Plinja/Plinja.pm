@@ -6,8 +6,8 @@ use lib dirname(__FILE__) . "/ToolChains";
 sub ninjaEscapePath
 {
     my $str = shift;
-    $str =~ s/:/\$\:/;
-    $str =~ s/ /\$ /;
+    $str =~ s/:/\$\:/g;
+    $str =~ s/ /\$ /g;
     return $str;
 }
 
@@ -24,10 +24,10 @@ sub emitRegeneratorTarget
     print($FH "  description = Re-running Make script.\n");
     print($FH "  generator = 1\n");
     print($FH "\n");
-    print($FH "build $ninjaFileEsc : RERUN_MAKE \$\n");
+    print($FH "build $ninjaFileEsc : RERUN_MAKE");
     foreach my $key ( keys %INC ) {
         my $path = ninjaEscapePath($INC{$key});
-        print($FH "    $path \$\n");
+        print($FH " \$\n    $path");
     }
     print($FH "\n");
     print($FH "\n");

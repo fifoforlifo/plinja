@@ -20,19 +20,17 @@ sub BUILD
 {
     my ($mod) = @_;
     $mod->{INPUTS} = [];
-    
-    my $toolChainName = $mod->variant->{toolChain};
-    my $toolChain = $mod->moduleMan->getToolChain($toolChainName);
-    if (!$toolChain) {
-        confess "ToolChain \"$toolChainName\" does not exist.";
-    }
-    $mod->{toolChain} = $toolChain;
 }
 
-# Should return a string containing the output directory for the current module and variant.
+sub toolChain
+{
+    confess sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
+}
+
 sub outputDir
 {
-    die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
+    my $mod = shift;
+    return $mod->{OUTPUT_DIR};
 }
 
 sub outputFile
@@ -79,7 +77,7 @@ sub compile
     if ($lambda) {
         &$lambda($task);
     }
-    $task->emit($mod->{toolChain}, $mod->moduleMan->FH);
+    $task->emit($mod->toolChain, $mod->moduleMan->FH);
     
     $mod->addInputFile($task->outputFile);
     return $task;
@@ -91,9 +89,7 @@ sub compileOverride
 
 sub staticLibrary
 {
-    my $mod = shift;
-    my $outputFileName = shift;
-    my $lambda = shift;
+    my ($mod, $outputFileName, $lambda) = @_;
 
     if ($mod->{OUTPUT}) {
         die "Output already selected: $mod->{OUTPUT}";
@@ -102,7 +98,7 @@ sub staticLibrary
         die "You must specify an outputFileName parameter.";
     }
 
-    if ($OSNAME eq "MSWin32") {
+    if ($mod->variant->{os} eq "windows") {
         $outputFileName = $outputFileName . ".lib";
     }
     else {
@@ -113,15 +109,15 @@ sub staticLibrary
     $mod->{LIBRARY_FILE} = $outputFile;
 
     my $task = new StaticLibraryTask(outputFile => $outputFile, workingDir => $mod->{MODULE_DIR});
-    $mod->staticLibraryOverride($task);
-    if ($lambda) {
-        &$lambda($task);
-    }
     foreach (@{$mod->{INPUTS}}) {
         my $input = $_;
         push($task->{INPUTS}, $input);
     }
-    $task->emit($mod->{toolChain}, $mod->moduleMan->FH);
+    $mod->staticLibraryOverride($task);
+    if ($lambda) {
+        &$lambda($task);
+    }
+    $task->emit($mod->toolChain, $mod->moduleMan->FH);
     
     $mod->{OUTPUT_FILE} = $task->outputFile;
     return $task;
@@ -133,9 +129,7 @@ sub staticLibraryOverride
 
 sub sharedLibrary
 {
-    my $mod = shift;
-    my $outputFileName = shift;
-    my $lambda = shift;
+    my ($mod, $outputFileName, $lambda) = @_;
 
     if ($mod->{OUTPUT}) {
         die "Output already selected: $mod->{OUTPUT}";
@@ -145,7 +139,7 @@ sub sharedLibrary
     }
 
     my $outputFile;    
-    if ($OSNAME eq "MSWin32") {
+    if ($mod->variant->{os} eq "windows") {
         $mod->{LIBRARY_FILE} = File::Spec->catfile($mod->outputDir, $outputFileName . ".lib");
         $outputFile          = File::Spec->catfile($mod->outputDir, $outputFileName . ".dll");
     }
@@ -155,24 +149,15 @@ sub sharedLibrary
     }
 
     my $task = new SharedLibraryTask(outputFile => $outputFile, libraryFile => $mod->{LIBRARY_FILE}, workingDir => $mod->{MODULE_DIR});
-    $mod->sharedLibraryOverride($task);
     foreach (@{$mod->{INPUTS}}) {
         my $input = $_;
         push($task->{INPUTS}, $input);
     }
-    # hack
-    if ($OSNAME eq "MSWin32") {
-        if ($mod->variant->{toolChain} =~ "x86") {
-            push($task->libPaths, $rootPaths{'winsdk'} . "/Lib");
-        }
-        else {
-            push($task->libPaths, $rootPaths{'winsdk'} . "/Lib/x64");
-        }
-    }
+    $mod->sharedLibraryOverride($task);
     if ($lambda) {
         &$lambda($task);
     }
-    $task->emit($mod->{toolChain}, $mod->moduleMan->FH);
+    $task->emit($mod->toolChain, $mod->moduleMan->FH);
 
     $mod->{OUTPUT_FILE} = $task->outputFile;
     return $task;
@@ -184,9 +169,7 @@ sub sharedLibraryOverride
 
 sub executable
 {
-    my $mod = shift;
-    my $outputFileName = shift;
-    my $lambda = shift;
+    my ($mod, $outputFileName, $lambda) = @_;
 
     if ($mod->{OUTPUT}) {
         die "Output already selected: $mod->{OUTPUT}";
@@ -195,7 +178,7 @@ sub executable
         die "You must specify an outputFileName parameter.";
     }
 
-    if ($OSNAME eq "MSWin32") {
+    if ($mod->variant->{os} eq "windows") {
         $outputFileName = $outputFileName . ".exe";
     }
     else {
@@ -205,24 +188,15 @@ sub executable
     my $outputFile = File::Spec->catfile($mod->outputDir, $outputFileName);
 
     my $task = new ExecutableTask(outputFile => $outputFile, workingDir => $mod->{MODULE_DIR});
-    $mod->executableOverride($task);
     foreach (@{$mod->{INPUTS}}) {
         my $input = $_;
         push($task->inputs, $input);
     }
-    # hack
-    if ($OSNAME eq "MSWin32") {
-        if ($mod->variant->{toolChain} =~ "x86") {
-            push($task->libPaths, $rootPaths{'winsdk'} . "/Lib");
-        }
-        else {
-            push($task->libPaths, $rootPaths{'winsdk'} . "/Lib/x64");
-        }
-    }
+    $mod->executableOverride($task);
     if ($lambda) {
         &$lambda($task);
     }
-    $task->emit($mod->{toolChain}, $mod->moduleMan->FH);
+    $task->emit($mod->toolChain, $mod->moduleMan->FH);
     
     $mod->{OUTPUT_FILE} = $task->outputFile;
     return $task;

@@ -10,12 +10,12 @@ has 'moduleMan' => (is => 'ro', isa => 'ModuleMan');
 
 sub moduleName
 {
-    die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
+    confess sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
 }
 
 sub define
 {
-    die sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
+    confess sprintf("you need to implement %s::%s", $_[0], (caller(0))[3]);
 }
 
 sub addToGraph

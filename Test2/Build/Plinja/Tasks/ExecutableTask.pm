@@ -11,19 +11,12 @@ sub BUILD
 {
     my $task = shift;
     $task->{INPUTS} = [];
-    $task->{LIBPATHS} = [];
 }
 
 sub inputs
 {
     my $task = shift;
     return $task->{INPUTS};
-}
-
-sub libPaths
-{
-    my $task = shift;
-    return $task->{LIBPATHS};
 }
 
 sub emit

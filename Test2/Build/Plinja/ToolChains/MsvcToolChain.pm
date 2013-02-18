@@ -122,7 +122,9 @@ sub emitSharedLibrary
             print($FH "|");
         }
         foreach (@{$task->inputs}) {
-            my $input = Plinja::ninjaEscapePath($_);
+            my $input = $_;
+            next if (!File::Spec->file_name_is_absolute($input));
+            $input = Plinja::ninjaEscapePath($input);
             print($FH " $input");
         }
         print($FH "\n");
@@ -130,14 +132,17 @@ sub emitSharedLibrary
     print($FH "  LOG_FILE    = ${\$task->outputFile}.log\n");
     print($FH "  RSP_FILE    = ${\$task->outputFile}.rsp\n");
     print($FH "  rspfile     = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile_content = /nologo /DLL /OUT:${\$task->outputFile}");
-        foreach (@{$task->libPaths}) {
-            my $libPath = $_;
-            print($FH " \"/LIBPATH:$libPath\"");
-        }
+    print($FH "  rspfile_content = /nologo /DLL \"/OUT:${\$task->outputFile}\"");
         foreach (@{$task->inputs}) {
             my $input = $_;
-            print($FH " \"$input\"");
+            if ($input =~ m/[.]lib$/) {
+                my $libpath = dirname($input);
+                my $libname = basename($input);
+                print($FH " \"/LIBPATH:$libpath\" \"$libname\"");
+            }
+            else {
+                print($FH " \"$input\"");
+            }
         }
         print($FH "\n");
     print($FH "  DESC        = -> $outputFileName\n");
@@ -161,7 +166,9 @@ sub emitExecutable
             print($FH "|");
         }
         foreach (@{$task->inputs}) {
-            my $input = Plinja::ninjaEscapePath($_);
+            my $input = $_;
+            next if (!File::Spec->file_name_is_absolute($input));
+            $input = Plinja::ninjaEscapePath($input);
             print($FH " $input");
         }
         print($FH "\n");
@@ -169,11 +176,7 @@ sub emitExecutable
     print($FH "  LOG_FILE    = ${\$task->outputFile}.log\n");
     print($FH "  RSP_FILE    = ${\$task->outputFile}.rsp\n");
     print($FH "  rspfile     = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile_content = /nologo /OUT:${\$task->outputFile}");
-        foreach (@{$task->libPaths}) {
-            my $libPath = $_;
-            print($FH " \"/LIBPATH:$libPath\"");
-        }
+    print($FH "  rspfile_content = /nologo \"/OUT:${\$task->outputFile}\"");
         foreach (@{$task->inputs}) {
             my $input = $_;
             print($FH " \"$input\"");

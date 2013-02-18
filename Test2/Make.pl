@@ -8,7 +8,7 @@ use Plinja;
 use RootPaths;
 # common build stuff
 use ModuleMan;
-use MyVariant;
+use CppVariant;
 use MsvcToolChain;
 # specific projects to build from the root
 use Prog0;
@@ -22,8 +22,8 @@ open(my $FH, ">$ninjaFile");
 
 # TODO: use value from commandline if available
 my $config = 'dbg';
-my $variant_x86   = MyVariant->new(str => "msvc10_x86.$config");
-my $variant_amd64 = MyVariant->new(str => "msvc10_amd64.$config");
+my $variant_x86   = MyVariant->new(str => "windows.msvc10.x86.$config");
+my $variant_amd64 = MyVariant->new(str => "windows.msvc10.amd64.$config");
 
 # Create the module manager, which tracks all modules (projects) being built.
 my $moduleMan = ModuleMan->new(FH => $FH);
