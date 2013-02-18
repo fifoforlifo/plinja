@@ -49,24 +49,27 @@ sub calcWinsdkLibDir
     }
 }
 
-sub sharedLibraryOverride
+sub addPlatformLibs
 {
     my ($mod, $task) = @_;
     if ($mod->variant->{os} eq "windows") {
         my $winsdkLibDir = $mod->calcWinsdkLibDir();
-        push($task->inputs, $winsdkLibDir . "user32.lib");
         push($task->inputs, $winsdkLibDir . "kernel32.lib");
+        push($task->inputs, $winsdkLibDir . "user32.lib");
+        push($task->inputs, $winsdkLibDir . "gdi32.lib");
     }
+}
+
+sub sharedLibraryOverride
+{
+    my ($mod, $task) = @_;
+    $mod->addPlatformLibs($task);
 }
 
 sub executableOverride
 {
     my ($mod, $task) = @_;
-    if ($mod->variant->{os} eq "windows") {
-        my $winsdkLibDir = $mod->calcWinsdkLibDir();
-        push($task->inputs, $winsdkLibDir . "user32.lib");
-        push($task->inputs, $winsdkLibDir . "kernel32.lib");
-    }
+    $mod->addPlatformLibs($task);
 }
 
 1;

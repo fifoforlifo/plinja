@@ -1,8 +1,4 @@
 package LibA0;
-use Mouse;
-use File::Basename;
-use File::Spec;
-use RootPaths;
 use CppModuleEx;
 
 extends CppModuleEx;

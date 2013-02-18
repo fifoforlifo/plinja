@@ -62,7 +62,7 @@ sub GenerateDeps
             print($DEPS "$2 \\\n");
         }
     }
-    print("\n");
+    print($DEPS "\n");
     close($SI);
     close($DEPS);
 }
