@@ -13,12 +13,12 @@ has arch => (is => 'ro');
 sub emitRules
 {
     my ($toolChain, $FH) = @_;
-    
+
     my $name = $toolChain->name;
     my $vsInstallDir = $toolChain->vsInstallDir;
     my $arch = $toolChain->arch;
     my $scriptDir = dirname(__FILE__);
-    
+
     print($FH "#############################################\n");
     print($FH "# $name\n");
     print($FH "\n");
@@ -40,20 +40,105 @@ sub emitRules
     print($FH "\n");
 }
 
+sub translateOptLevel
+{
+    my ($toolChain, $FH, $task) = @_;
+    if ($task->optLevel == 0) {
+        print($FH " /Od"); # optimizations disabled
+    }
+    elsif (1 <= $task->optLevel && $task->optLevel <= 2) {
+        print($FH " /O${\$task->optLevel}");
+    }
+    elsif ($task->optLevel == 3) {
+        print($FH " /Ox");
+    }
+    else {
+        confess("invalid optimization level ${\$task->optLevel}");
+    }
+}
+
+sub translateDebugLevel
+{
+    my ($toolChain, $FH, $task) = @_;
+    if (!(0 <= $task->debugLevel && $task->debugLevel <= 3)) {
+        confess("invalid debug level ${\$task->debugLevel}");
+    }
+
+    if ($task->debugLevel == 0) {
+        return;
+    }
+
+    if ($task->debugLevel == 1) {
+        print($FH " /Zd"); # line info
+    }
+    elsif ($task->debugLevel == 2) {
+        print($FH " /Zi"); # full debug info
+    }
+    elsif ($task->debugLevel == 3) {
+        print($FH " /Zi"); # edit-and-continue
+    }
+    # rename PDB file
+    print($FH " \"/Fd${\$task->outputFile}.pdb\"");
+
+    if ($task->minimalRebuild) {
+        print($FH " /Gm");
+    }
+}
+
+sub translateIncludePaths
+{
+    my ($toolChain, $FH, $task) = @_;
+    foreach (@{$task->includePaths}) {
+        my $includePath = $_;
+        confess "${\$task->outputFile}" if (!$includePath);
+        print($FH " \"/I$includePath\"");
+    }
+}
+
+sub translateDynamicCrt
+{
+    my ($toolChain, $FH, $task) = @_;
+    if ($task->optLevel == 0) {
+        if ($task->dynamicCrt) {
+            print($FH " /MDd");
+        }
+        else {
+            print($FH " /MTd");
+        }
+    }
+    else { # it's an optimized build
+        if ($task->dynamicCrt) {
+            print($FH " /MD");
+        }
+        else {
+            print($FH " /MT");
+        }
+    }
+}
+
 sub emitCompile
 {
     my ($toolChain, $FH, $task) = @_;
-    
+
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
-    
-    my $outputFile = Plinja::ninjaEscapePath($task->outputFile);    
+
+    my $outputFile = Plinja::ninjaEscapePath($task->outputFile);
     my $sourceFile = Plinja::ninjaEscapePath($task->sourceFile);
     my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $sourceFileName = basename($task->sourceFile);
     my $outputFileName = basename($task->outputFile);
+    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-cxx-invoke.pl");
 
-    print($FH "build $outputFile $logFile : ${name}_cxx  $sourceFile\n");
+    my $debugOutputs = "";
+    if ($task->debugLevel >= 1) {
+        $debugOutputs = $debugOutputs . " $outputFile.pdb";
+    }
+    if ($task->minimalRebuild) {
+        $debugOutputs = $debugOutputs . " $outputFile.idb";
+    }
+
+    print($FH "build $outputFile $debugOutputs $logFile : ${name}_cxx  $sourceFile | $scriptFile\n");
     print($FH "  WORKING_DIR = ${\$task->workingDir}\n");
     print($FH "  SRC_FILE    = ${\$task->sourceFile}\n");
     print($FH "  OBJ_FILE    = ${\$task->outputFile}\n");
@@ -61,7 +146,12 @@ sub emitCompile
     print($FH "  LOG_FILE    = ${\$task->outputFile}.log\n");
     print($FH "  RSP_FILE    = ${\$task->outputFile}.rsp\n");
     print($FH "  rspfile     = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile_content = /nologo /c /Od\n");
+    print($FH "  rspfile_content = /nologo /c");
+        $toolChain->translateOptLevel($FH, $task);
+        $toolChain->translateDebugLevel($FH, $task);
+        $toolChain->translateDynamicCrt($FH, $task);
+        $toolChain->translateIncludePaths($FH, $task);
+        print($FH "\n");
     print($FH "  DESC        = $sourceFileName -> $outputFileName\n");
     print($FH "\n");
 }
@@ -69,19 +159,17 @@ sub emitCompile
 sub emitStaticLibrary
 {
     my ($toolChain, $FH, $task) = @_;
-    
+
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
-    
+
     my $outputFile = Plinja::ninjaEscapePath($task->outputFile);
     my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
-    
+    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-lib-invoke.pl");
+
     print($FH "\n");
-    print($FH "build $outputFile $logFile : ${name}_lib ");
-        if (scalar(@{$task->inputs})) {
-            print($FH "|");
-        }
+    print($FH "build $outputFile $logFile : ${name}_lib | $scriptFile");
         foreach (@{$task->inputs}) {
             my $input = Plinja::ninjaEscapePath($_);
             print($FH " $input");
@@ -104,10 +192,10 @@ sub emitStaticLibrary
 sub emitSharedLibrary
 {
     my ($toolChain, $FH, $task) = @_;
-    
+
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
-    
+
     my $outputFile  = Plinja::ninjaEscapePath($task->outputFile);
     my $libraryFile = "";
     if ($task->outputFile ne $task->libraryFile) {
@@ -115,12 +203,10 @@ sub emitSharedLibrary
     }
     my $logFile     = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
+    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-link-invoke.pl");
 
     print($FH "\n");
-    print($FH "build $outputFile $libraryFile $logFile : ${name}_link ");
-        if (scalar(@{$task->inputs})) {
-            print($FH "|");
-        }
+    print($FH "build $outputFile $libraryFile $logFile : ${name}_link | $scriptFile");
         foreach (@{$task->inputs}) {
             my $input = $_;
             next if (!File::Spec->file_name_is_absolute($input));
@@ -144,6 +230,9 @@ sub emitSharedLibrary
                 print($FH " \"$input\"");
             }
         }
+        if ($task->keepDebugInfo) {
+            print($FH " /DEBUG");
+        }
         print($FH "\n");
     print($FH "  DESC        = -> $outputFileName\n");
     print($FH "\n");
@@ -152,19 +241,17 @@ sub emitSharedLibrary
 sub emitExecutable
 {
     my ($toolChain, $FH, $task) = @_;
-    
+
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
-    
+
     my $outputFile = Plinja::ninjaEscapePath($task->outputFile);
     my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
+    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-link-invoke.pl");
 
     print($FH "\n");
-    print($FH "build $outputFile $logFile : ${name}_link ");
-        if (scalar(@{$task->inputs})) {
-            print($FH "|");
-        }
+    print($FH "build $outputFile $logFile : ${name}_link | $scriptFile");
         foreach (@{$task->inputs}) {
             my $input = $_;
             next if (!File::Spec->file_name_is_absolute($input));
@@ -180,6 +267,9 @@ sub emitExecutable
         foreach (@{$task->inputs}) {
             my $input = $_;
             print($FH " \"$input\"");
+        }
+        if ($task->keepDebugInfo) {
+            print($FH " /DEBUG");
         }
         print($FH "\n");
     print($FH "  DESC        = -> $outputFileName\n");

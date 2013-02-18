@@ -7,6 +7,7 @@ extends BuildTask;
 has outputFile => (is => 'ro');
 has libraryFile => (is => 'ro');
 has workingDir => (is => 'ro');
+has keepDebugInfo => (is => 'rw', default => 1);
 
 sub BUILD
 {

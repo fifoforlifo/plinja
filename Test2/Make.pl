@@ -21,9 +21,11 @@ open(my $FH, ">$ninjaFile");
 
 
 # TODO: use value from commandline if available
-my $config = 'dbg';
-my $variant_x86   = MyVariant->new(str => "windows.msvc10.x86.$config");
-my $variant_amd64 = MyVariant->new(str => "windows.msvc10.amd64.$config");
+my @variants = ();
+push(@variants, MyVariant->new(str => "windows.msvc10.x86.dbg.dcrt"));
+push(@variants, MyVariant->new(str => "windows.msvc10.x86.rel.dcrt"));
+push(@variants, MyVariant->new(str => "windows.msvc10.amd64.dbg.dcrt"));
+push(@variants, MyVariant->new(str => "windows.msvc10.amd64.rel.dcrt"));
 
 # Create the module manager, which tracks all modules (projects) being built.
 my $moduleMan = ModuleMan->new(FH => $FH);
@@ -38,8 +40,10 @@ $moduleMan->emitRules();
 
 
 # Add top-level target modules.
-my $prog0_x86   = $moduleMan->gorcModule('Prog0', $variant_x86);
-my $prog0_amd64 = $moduleMan->gorcModule('Prog0', $variant_amd64);
+foreach (@variants) {
+    my $variant = $_;
+    my $prog = $moduleMan->gorcModule('Prog0', $variant);
+}
 
 Plinja::emitRegeneratorTarget($FH, $ninjaFile, __FILE__);
 

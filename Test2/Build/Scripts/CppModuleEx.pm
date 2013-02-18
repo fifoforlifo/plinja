@@ -8,7 +8,7 @@ extends CppModule;
 sub BUILD
 {
     my ($mod) = @_;
-    
+
     my $toolChainName = $mod->variant->{toolChain} . '_' . $mod->variant->{arch};
     my $toolChain = $mod->moduleMan->getToolChain($toolChainName);
     if (!$toolChain) {
@@ -23,15 +23,29 @@ sub toolChain
     return $mod->{TOOL_CHAIN};
 }
 
-sub compileOverride
+sub setCompileOptions
 {
     my ($mod, $task) = @_;
+
     if ($mod->variant->{os} eq "windows") {
         push($task->includePaths, $rootPaths{'winsdk'} . "/Include");
     }
+
+    if ($mod->variant->{config} eq "dbg") {
+        $task->optLevel(0);
+    }
+    elsif ($mod->variant->{config} eq "rel") {
+        $task->optLevel(3);
+    }
+    $task->dynamicCrt($mod->variant->{crt} eq 'dcrt');
+
+    $task->debugLevel(2);
+    if ($mod->variant->{config} eq "dbg") {
+        $task->minimalRebuild(1);
+    }
 }
 
-sub staticLibraryOverride
+sub setStaticLibraryOptions
 {
 }
 
@@ -60,15 +74,19 @@ sub addPlatformLibs
     }
 }
 
-sub sharedLibraryOverride
+sub setSharedLibraryOptions
 {
     my ($mod, $task) = @_;
+
+    $task->keepDebugInfo(1);
     $mod->addPlatformLibs($task);
 }
 
-sub executableOverride
+sub setExecutableOptions
 {
     my ($mod, $task) = @_;
+
+    $task->keepDebugInfo(1);
     $mod->addPlatformLibs($task);
 }
 

@@ -40,6 +40,13 @@ elsif ($arch eq "amd64") {
     $ENV{"LIB"} = "$vsInstallDir\\VC\\lib\\amd64";
 }
 
+sub shellEscapePath
+{
+    my ($str) = @_;
+    $str =~ s/ /\\ /g;
+    return $str;
+}
+
 sub GenerateDeps
 {
     my $ppFile = "$objFile.pp";
@@ -51,23 +58,29 @@ sub GenerateDeps
         my $log = read_file($siFile);
         print($LOG $log);
         print(STDERR $log);
+        unlink($siFile);
+        unlink($ppFile);
         exit 1;
     }
-    
+
     open(my $DEPS, ">$depFile") or die "failed to open depFile: $depFile";
     open(my $SI, "<$siFile") or die "failed to open showIncludes file: $siFile";
-    print($DEPS "$objFile: \\\n");
+    my $objFileEsc = shellEscapePath($objFile);
+    print($DEPS "$objFileEsc: \\\n");
     while (my $line = <$SI>) {
         if ($line =~ "Note: including file: ([ ]*)(.*)") {
-            print($DEPS "$2 \\\n");
+            my $depEsc = shellEscapePath($2);
+            print($DEPS "$depEsc \\\n");
         }
     }
     print($DEPS "\n");
     close($SI);
     close($DEPS);
+    unlink($siFile);
+    unlink($ppFile);
 }
 
-sub Compile()
+sub Compile
 {
     my $cmd = "cl \"$srcFile\" \"\@$rspFile\" \"/Fo$objFile\" > \"$logFile\" 2>&1";
     my $exitCode = system($cmd);

@@ -18,7 +18,7 @@ sub getModule
 sub gorcModule
 {
     my ($moduleMan, $moduleName, $variant) = @_;
-    
+
     my $mod = $moduleMan->getModule($moduleName, $variant);
     if ($mod) {
         return $mod;
@@ -46,7 +46,7 @@ sub getToolChain
 sub addToolChain
 {
     my ($moduleMan, $toolChain) = @_;
-    
+
     if ($moduleMan->getToolChain($toolChain->name)) {
         confess "$toolChain already exists";
     }

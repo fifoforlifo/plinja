@@ -10,12 +10,16 @@ extends BuildTask;
 has sourceFile => (is => 'ro');
 has objectFile => (is => 'ro');
 has workingDir => (is => 'ro');
-has optLevel => (is => 'rw');
-has debugLevel => (is => 'rw');
+has optLevel => (is => 'rw', default => 0);
+has debugLevel => (is => 'rw', default => 2);
+has dynamicCrt => (is => 'rw', default => 1); # boolean
+
+# msvc-specific options
+has minimalRebuild => (is => 'rw', default => 0);
 
 sub BUILD
 {
-    my $task = shift;
+    my ($task) = @_;
     if (!$task->objectFile) {
         confess "objectFile not defined";
     }
@@ -27,13 +31,13 @@ sub BUILD
 
 sub includePaths
 {
-    my $task = shift;
+    my ($task) = @_;
     return $task->{INCLUDE_PATHS};
 }
 
 sub outputFile
 {
-    my $task = shift;
+    my ($task) = @_;
     return $task->objectFile;
 }
 

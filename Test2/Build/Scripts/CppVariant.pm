@@ -9,6 +9,7 @@ my $_fieldDefs = [
     toolChain   => ['msvc9', 'msvc10', 'msvc11', 'mingw', 'gcc'],
     arch        => ['x86', 'amd64'],
     config      => ['dbg', 'rel'],
+    crt         => ['scrt', 'dcrt'],
 ];
 
 sub getFieldDefs

@@ -73,18 +73,19 @@ sub compile
     }
 
     my $task = CppTask->new(sourceFile => $sourceFile, objectFile => $objectFile, workingDir => $mod->{MODULE_DIR});
-    $mod->compileOverride($task);
+    $mod->setCompileOptions($task);
     if ($lambda) {
-        &$lambda($task);
+        &$lambda($mod, $task);
     }
     $task->emit($mod->toolChain, $mod->moduleMan->FH);
-    
+
     $mod->addInputFile($task->outputFile);
     return $task;
 }
 
-sub compileOverride
+sub setCompileOptions
 {
+    my ($mod, $task) = @_;
 }
 
 sub staticLibrary
@@ -109,22 +110,23 @@ sub staticLibrary
     $mod->{LIBRARY_FILE} = $outputFile;
 
     my $task = new StaticLibraryTask(outputFile => $outputFile, workingDir => $mod->{MODULE_DIR});
+    $mod->setStaticLibraryOptions($task);
+    if ($lambda) {
+        &$lambda($task);
+    }
     foreach (@{$mod->{INPUTS}}) {
         my $input = $_;
         push($task->{INPUTS}, $input);
     }
-    $mod->staticLibraryOverride($task);
-    if ($lambda) {
-        &$lambda($task);
-    }
     $task->emit($mod->toolChain, $mod->moduleMan->FH);
-    
+
     $mod->{OUTPUT_FILE} = $task->outputFile;
     return $task;
 }
 
-sub staticLibraryOverride
+sub setStaticLibraryOptions
 {
+    my ($mod, $task) = @_;
 }
 
 sub sharedLibrary
@@ -138,7 +140,7 @@ sub sharedLibrary
         die "You must specify an outputFileName parameter.";
     }
 
-    my $outputFile;    
+    my $outputFile;
     if ($mod->variant->{os} eq "windows") {
         $mod->{LIBRARY_FILE} = File::Spec->catfile($mod->outputDir, $outputFileName . ".lib");
         $outputFile          = File::Spec->catfile($mod->outputDir, $outputFileName . ".dll");
@@ -149,13 +151,13 @@ sub sharedLibrary
     }
 
     my $task = new SharedLibraryTask(outputFile => $outputFile, libraryFile => $mod->{LIBRARY_FILE}, workingDir => $mod->{MODULE_DIR});
+    $mod->setSharedLibraryOptions($task);
+    if ($lambda) {
+        &$lambda($task);
+    }
     foreach (@{$mod->{INPUTS}}) {
         my $input = $_;
         push($task->{INPUTS}, $input);
-    }
-    $mod->sharedLibraryOverride($task);
-    if ($lambda) {
-        &$lambda($task);
     }
     $task->emit($mod->toolChain, $mod->moduleMan->FH);
 
@@ -163,8 +165,9 @@ sub sharedLibrary
     return $task;
 }
 
-sub sharedLibraryOverride
+sub setSharedLibraryOptions
 {
+    my ($mod, $task) = @_;
 }
 
 sub executable
@@ -188,22 +191,23 @@ sub executable
     my $outputFile = File::Spec->catfile($mod->outputDir, $outputFileName);
 
     my $task = new ExecutableTask(outputFile => $outputFile, workingDir => $mod->{MODULE_DIR});
+    $mod->setExecutableOptions($task);
+    if ($lambda) {
+        &$lambda($task);
+    }
     foreach (@{$mod->{INPUTS}}) {
         my $input = $_;
         push($task->inputs, $input);
     }
-    $mod->executableOverride($task);
-    if ($lambda) {
-        &$lambda($task);
-    }
     $task->emit($mod->toolChain, $mod->moduleMan->FH);
-    
+
     $mod->{OUTPUT_FILE} = $task->outputFile;
     return $task;
 }
 
-sub executableOverride
+sub setExecutableOptions
 {
+    my ($mod, $task) = @_;
 }
 
 1;
