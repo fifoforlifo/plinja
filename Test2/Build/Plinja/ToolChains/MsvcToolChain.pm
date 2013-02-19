@@ -1,10 +1,10 @@
 package MsvcToolChain;
 use Mouse;
-use ToolChain;
+use CppToolChain;
 use File::Basename;
 use Plinja;
 
-extends ToolChain;
+extends CppToolChain;
 
 has vsInstallDir => (is => 'ro');
 has arch => (is => 'ro');
@@ -42,15 +42,15 @@ sub emitRules
 
 sub translateOptLevel
 {
-    my ($toolChain, $FH, $task) = @_;
+    my ($toolChain, $options, $task) = @_;
     if ($task->optLevel == 0) {
-        print($FH " /Od"); # optimizations disabled
+        push(@$options, " /Od"); # optimizations disabled
     }
     elsif (1 <= $task->optLevel && $task->optLevel <= 2) {
-        print($FH " /O${\$task->optLevel}");
+        push(@$options, " /O${\$task->optLevel}");
     }
     elsif ($task->optLevel == 3) {
-        print($FH " /Ox");
+        push(@$options, " /Ox");
     }
     else {
         confess("invalid optimization level ${\$task->optLevel}");
@@ -59,7 +59,7 @@ sub translateOptLevel
 
 sub translateDebugLevel
 {
-    my ($toolChain, $FH, $task) = @_;
+    my ($toolChain, $options, $task) = @_;
     if (!(0 <= $task->debugLevel && $task->debugLevel <= 3)) {
         confess("invalid debug level ${\$task->debugLevel}");
     }
@@ -69,56 +69,56 @@ sub translateDebugLevel
     }
 
     if ($task->debugLevel == 1) {
-        print($FH " /Zd"); # line info
+        push(@$options, " /Zd"); # line info
     }
     elsif ($task->debugLevel == 2) {
-        print($FH " /Zi"); # full debug info
+        push(@$options, " /Zi"); # full debug info
     }
     elsif ($task->debugLevel == 3) {
-        print($FH " /Zi"); # edit-and-continue
+        push(@$options, " /Zi"); # edit-and-continue
     }
     # rename PDB file
-    print($FH " \"/Fd${\$task->outputFile}.pdb\"");
+    push(@$options, " \"/Fd${\$task->outputFile}.pdb\"");
 
     if ($task->minimalRebuild) {
-        print($FH " /Gm");
+        push(@$options, " /Gm");
     }
 }
 
 sub translateIncludePaths
 {
-    my ($toolChain, $FH, $task) = @_;
+    my ($toolChain, $options, $task) = @_;
     foreach (@{$task->includePaths}) {
         my $includePath = $_;
         confess "${\$task->outputFile}" if (!$includePath);
-        print($FH " \"/I$includePath\"");
+        push(@$options, " \"/I$includePath\"");
     }
 }
 
 sub translateDynamicCrt
 {
-    my ($toolChain, $FH, $task) = @_;
+    my ($toolChain, $options, $task) = @_;
     if ($task->optLevel == 0) {
         if ($task->dynamicCrt) {
-            print($FH " /MDd");
+            push(@$options, " /MDd");
         }
         else {
-            print($FH " /MTd");
+            push(@$options, " /MTd");
         }
     }
     else { # it's an optimized build
         if ($task->dynamicCrt) {
-            print($FH " /MD");
+            push(@$options, " /MD");
         }
         else {
-            print($FH " /MT");
+            push(@$options, " /MT");
         }
     }
 }
 
 sub emitCompile
 {
-    my ($toolChain, $FH, $task) = @_;
+    my ($toolChain, $FH, $mod, $task) = @_;
 
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
@@ -138,27 +138,33 @@ sub emitCompile
         $debugOutputs = $debugOutputs . " $outputFile.idb";
     }
 
-    print($FH "build $outputFile $debugOutputs $logFile : ${name}_cxx  $sourceFile | $scriptFile\n");
+    print($FH "build $outputFile $debugOutputs $logFile : ${name}_cxx  $sourceFile | $outputFile.rsp $scriptFile\n");
     print($FH "  WORKING_DIR = ${\$task->workingDir}\n");
     print($FH "  SRC_FILE    = ${\$task->sourceFile}\n");
     print($FH "  OBJ_FILE    = ${\$task->outputFile}\n");
     print($FH "  DEP_FILE    = ${\$task->outputFile}.d\n");
     print($FH "  LOG_FILE    = ${\$task->outputFile}.log\n");
     print($FH "  RSP_FILE    = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile     = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile_content = /nologo /c");
-        $toolChain->translateOptLevel($FH, $task);
-        $toolChain->translateDebugLevel($FH, $task);
-        $toolChain->translateDynamicCrt($FH, $task);
-        $toolChain->translateIncludePaths($FH, $task);
-        print($FH "\n");
     print($FH "  DESC        = $sourceFileName -> $outputFileName\n");
     print($FH "\n");
+
+    # generate response file
+    my @options = ();
+    push(@options, "/nologo /c");
+    $toolChain->translateOptLevel(\@options, $task);
+    $toolChain->translateDebugLevel(\@options, $task);
+    $toolChain->translateDynamicCrt(\@options, $task);
+    # add path lists last to make the major options easier to see
+    $toolChain->translateIncludePaths(\@options, $task);
+    my $rspContents = join('', @options);
+    Plinja::writeFileIfDifferent($task->outputFile . '.rsp', $rspContents);
+
+    push($mod->makeFiles, $task->outputFile . '.rsp');
 }
 
 sub emitStaticLibrary
 {
-    my ($toolChain, $FH, $task) = @_;
+    my ($toolChain, $FH, $mod, $task) = @_;
 
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
@@ -169,7 +175,7 @@ sub emitStaticLibrary
     my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-lib-invoke.pl");
 
     print($FH "\n");
-    print($FH "build $outputFile $logFile : ${name}_lib | $scriptFile");
+    print($FH "build $outputFile $logFile : ${name}_lib | $outputFile.rsp $scriptFile");
         foreach (@{$task->inputs}) {
             my $input = Plinja::ninjaEscapePath($_);
             print($FH " $input");
@@ -178,20 +184,24 @@ sub emitStaticLibrary
     print($FH "  WORKING_DIR = ${\$task->workingDir}\n");
     print($FH "  LOG_FILE    = ${\$task->outputFile}.log\n");
     print($FH "  RSP_FILE    = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile     = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile_content = /nologo /OUT:${\$task->outputFile}");
-        foreach (@{$task->inputs}) {
-            my $input = $_;
-            print($FH " $input");
-        }
-        print($FH "\n");
     print($FH "  DESC        = -> $outputFileName\n");
     print($FH "\n");
+
+    # generate response file
+    my @options = ();
+    push(@options, "/nologo \"/OUT:${\$task->outputFile}\"");
+    for my $input (@{$task->inputs}) {
+        push(@options, " $input");
+    }
+    my $rspContents = join('', @options);
+    Plinja::writeFileIfDifferent($task->outputFile . '.rsp', $rspContents);
+
+    push($mod->makeFiles, $task->outputFile . '.rsp');
 }
 
 sub emitSharedLibrary
 {
-    my ($toolChain, $FH, $task) = @_;
+    my ($toolChain, $FH, $mod, $task) = @_;
 
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
@@ -217,30 +227,34 @@ sub emitSharedLibrary
     print($FH "  WORKING_DIR = ${\$task->workingDir}\n");
     print($FH "  LOG_FILE    = ${\$task->outputFile}.log\n");
     print($FH "  RSP_FILE    = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile     = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile_content = /nologo /DLL \"/OUT:${\$task->outputFile}\"");
-        foreach (@{$task->inputs}) {
-            my $input = $_;
-            if ($input =~ m/[.]lib$/) {
-                my $libpath = dirname($input);
-                my $libname = basename($input);
-                print($FH " \"/LIBPATH:$libpath\" \"$libname\"");
-            }
-            else {
-                print($FH " \"$input\"");
-            }
-        }
-        if ($task->keepDebugInfo) {
-            print($FH " /DEBUG");
-        }
-        print($FH "\n");
     print($FH "  DESC        = -> $outputFileName\n");
     print($FH "\n");
+
+    # generate response file
+    my @options = ();
+    push(@options, "/nologo /DLL \"/OUT:${\$task->outputFile}\"");
+    for my $input (@{$task->inputs}) {
+        if ($input =~ m/[.]lib$/) {
+            my $libpath = dirname($input);
+            my $libname = basename($input);
+            push(@options, " \"/LIBPATH:$libpath\" \"$libname\"");
+        }
+        else {
+            push(@options, " \"$input\"");
+        }
+    }
+    if ($task->keepDebugInfo) {
+        push(@options, " /DEBUG");
+    }
+    my $rspContents = join('', @options);
+    Plinja::writeFileIfDifferent($task->outputFile . '.rsp', $rspContents);
+
+    push($mod->makeFiles, $task->outputFile . '.rsp');
 }
 
 sub emitExecutable
 {
-    my ($toolChain, $FH, $task) = @_;
+    my ($toolChain, $FH, $mod, $task) = @_;
 
     my $name = $toolChain->name;
     my $scriptDir = dirname(__FILE__);
@@ -262,18 +276,29 @@ sub emitExecutable
     print($FH "  WORKING_DIR = ${\$task->workingDir}\n");
     print($FH "  LOG_FILE    = ${\$task->outputFile}.log\n");
     print($FH "  RSP_FILE    = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile     = ${\$task->outputFile}.rsp\n");
-    print($FH "  rspfile_content = /nologo \"/OUT:${\$task->outputFile}\"");
-        foreach (@{$task->inputs}) {
-            my $input = $_;
-            print($FH " \"$input\"");
-        }
-        if ($task->keepDebugInfo) {
-            print($FH " /DEBUG");
-        }
-        print($FH "\n");
     print($FH "  DESC        = -> $outputFileName\n");
     print($FH "\n");
+
+    # generate response file
+    my @options = ();
+    push(@options, "/nologo \"/OUT:${\$task->outputFile}\"");
+    for my $input (@{$task->inputs}) {
+        if ($input =~ m/[.]lib$/) {
+            my $libpath = dirname($input);
+            my $libname = basename($input);
+            push(@options, " \"/LIBPATH:$libpath\" \"$libname\"");
+        }
+        else {
+            push(@options, " \"$input\"");
+        }
+    }
+    if ($task->keepDebugInfo) {
+        push(@options, " /DEBUG");
+    }
+    my $rspContents = join('', @options);
+    Plinja::writeFileIfDifferent($task->outputFile . '.rsp', $rspContents);
+
+    push($mod->makeFiles, $task->outputFile . '.rsp');
 }
 
 1;

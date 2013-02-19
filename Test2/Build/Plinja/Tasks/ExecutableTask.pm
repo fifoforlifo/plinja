@@ -22,8 +22,8 @@ sub inputs
 
 sub emit
 {
-    my ($task, $toolChain, $FH) = @_;
-    $toolChain->emitExecutable($FH, $task);
+    my ($task, $toolChain, $FH, $mod) = @_;
+    $toolChain->emitExecutable($FH, $mod, $task);
 }
 
 1;

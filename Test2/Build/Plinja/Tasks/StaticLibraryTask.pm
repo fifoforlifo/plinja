@@ -22,8 +22,8 @@ sub inputs
 
 sub emit
 {
-    my ($task, $toolChain, $FH) = @_;
-    $toolChain->emitStaticLibrary($FH, $task);
+    my ($task, $toolChain, $FH, $mod) = @_;
+    $toolChain->emitStaticLibrary($FH, $mod, $task);
 }
 
 1;

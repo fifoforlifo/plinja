@@ -23,8 +23,8 @@ sub inputs
 
 sub emit
 {
-    my ($task, $toolChain, $FH) = @_;
-    $toolChain->emitSharedLibrary($FH, $task);
+    my ($task, $toolChain, $FH, $mod) = @_;
+    $toolChain->emitSharedLibrary($FH, $mod, $task);
 }
 
 1;

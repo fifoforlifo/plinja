@@ -1,5 +1,6 @@
 use Cwd;
 use File::Basename;
+use File::Path;
 use lib dirname(__FILE__) . "/Build/Plinja";
 use lib dirname(__FILE__) . "/Build/Scripts";
 
@@ -15,7 +16,7 @@ use Prog0;
 
 
 # A single build.ninja shall hold all rules + build commands.
-mkdir($rootPaths{'Built'});
+File::Path::make_path($rootPaths{'Built'});
 my $ninjaFile = dirname(__FILE__) . "/Built/build.ninja";
 open(my $FH, ">$ninjaFile");
 
@@ -45,6 +46,6 @@ foreach (@variants) {
     my $prog = $moduleMan->gorcModule('Prog0', $variant);
 }
 
-Plinja::emitRegeneratorTarget($FH, $ninjaFile, __FILE__);
+Plinja::emitRegeneratorTarget($FH, $ninjaFile, __FILE__, $moduleMan);
 
 print($FH "\n\n");

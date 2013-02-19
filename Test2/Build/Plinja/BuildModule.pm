@@ -2,11 +2,16 @@ package BuildModule;
 use Mouse;
 use Carp;
 use Variant;
-
 use ModuleMan;
 
 has 'variant' => (is => 'ro', isa => 'Variant');
 has 'moduleMan' => (is => 'ro', isa => 'ModuleMan');
+
+sub BUILD
+{
+    my ($mod) = @_;
+    $mod->{MAKE_FILES} = [];
+}
 
 sub moduleName
 {
@@ -25,8 +30,14 @@ sub addToGraph
         croak "Programmer Error: addToGraph called multiple times";
     }
     $mod->{addedToGraph} = 1;
-    
+
     $mod->define();
+}
+
+sub makeFiles
+{
+    my ($mod) = @_;
+    return $mod->{MAKE_FILES};
 }
 
 1;

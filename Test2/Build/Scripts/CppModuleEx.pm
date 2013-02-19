@@ -32,7 +32,7 @@ sub setCompileOptions
     }
 
     if ($mod->variant->{config} eq "dbg") {
-        $task->optLevel(0);
+        $task->optLevel(1);
     }
     elsif ($mod->variant->{config} eq "rel") {
         $task->optLevel(3);

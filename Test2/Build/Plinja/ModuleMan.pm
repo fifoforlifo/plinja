@@ -10,7 +10,7 @@ sub getModule
 {
     my ($moduleMan, $moduleName, $variant) = @_;
 
-    my $mod = $moduleMan->{modules}->{$moduleName}->{$variant->str};
+    my $mod = $moduleMan->{MODULES}->{$moduleName}->{$variant->str};
     return $mod;
 }
 
@@ -31,7 +31,7 @@ sub gorcModule
     $mod->{MODULE_DIR} = dirname(find_installed($moduleName));
     $mod->{OUTPUT_DIR} = File::Spec->catdir($rootPaths{'Built'}, $rootPaths{$moduleName . "_rel"}, $variant->str);
 
-    $moduleMan->{modules}->{$moduleName}->{$variant->str} = $mod;
+    $moduleMan->{MODULES}->{$moduleName}->{$variant->str} = $mod;
     $mod->addToGraph();
     return $mod;
 }
@@ -39,7 +39,7 @@ sub gorcModule
 sub getToolChain
 {
     my ($moduleMan, $toolChainName) = @_;
-    my $toolChain = $moduleMan->{toolChains}->{$toolChainName};
+    my $toolChain = $moduleMan->{TOOL_CHAINS}->{$toolChainName};
     return $toolChain;
 }
 
@@ -51,17 +51,28 @@ sub addToolChain
         confess "$toolChain already exists";
     }
 
-    $moduleMan->{toolChains}->{$toolChain->name} = $toolChain;
+    $moduleMan->{TOOL_CHAINS}->{$toolChain->name} = $toolChain;
 }
 
 sub emitRules
 {
     my ($moduleMan, $FH) = @_;
 
-    foreach my $toolChainName (keys %{$moduleMan->{toolChains}}) {
-        my $toolChain = $moduleMan->{toolChains}->{$toolChainName};
+    while (my ($toolChainName, $toolChain) = each %{$moduleMan->{TOOL_CHAINS}}) {
         $toolChain->emitRules($moduleMan->FH);
     }
+}
+
+sub getModules
+{
+    my ($moduleMan) = @_;
+    my $modules = [];
+    while (my ($moduleName, $variantToMod) = each %{$moduleMan->{MODULES}}) {
+        while (my ($variantStr, $mod) = each %{$variantToMod}) {
+            push(@$modules, $mod);
+        }
+    }
+    return $modules;
 }
 
 1;

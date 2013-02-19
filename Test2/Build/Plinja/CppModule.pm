@@ -77,7 +77,7 @@ sub compile
     if ($lambda) {
         &$lambda($mod, $task);
     }
-    $task->emit($mod->toolChain, $mod->moduleMan->FH);
+    $task->emit($mod->toolChain, $mod->moduleMan->FH, $mod);
 
     $mod->addInputFile($task->outputFile);
     return $task;
@@ -118,7 +118,7 @@ sub staticLibrary
         my $input = $_;
         push($task->{INPUTS}, $input);
     }
-    $task->emit($mod->toolChain, $mod->moduleMan->FH);
+    $task->emit($mod->toolChain, $mod->moduleMan->FH, $mod);
 
     $mod->{OUTPUT_FILE} = $task->outputFile;
     return $task;
@@ -159,7 +159,7 @@ sub sharedLibrary
         my $input = $_;
         push($task->{INPUTS}, $input);
     }
-    $task->emit($mod->toolChain, $mod->moduleMan->FH);
+    $task->emit($mod->toolChain, $mod->moduleMan->FH, $mod);
 
     $mod->{OUTPUT_FILE} = $task->outputFile;
     return $task;
@@ -199,7 +199,7 @@ sub executable
         my $input = $_;
         push($task->inputs, $input);
     }
-    $task->emit($mod->toolChain, $mod->moduleMan->FH);
+    $task->emit($mod->toolChain, $mod->moduleMan->FH, $mod);
 
     $mod->{OUTPUT_FILE} = $task->outputFile;
     return $task;

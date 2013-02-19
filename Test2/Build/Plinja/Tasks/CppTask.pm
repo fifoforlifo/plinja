@@ -43,8 +43,8 @@ sub outputFile
 
 sub emit
 {
-    my ($task, $toolChain, $FH) = @_;
-    $toolChain->emitCompile($FH, $task);
+    my ($task, $toolChain, $FH, $mod) = @_;
+    $toolChain->emitCompile($FH, $mod, $task);
 }
 
 1;

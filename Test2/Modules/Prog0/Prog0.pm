@@ -1,5 +1,6 @@
 package Prog0;
 use CppModuleEx;
+use RootPaths;
 
 extends CppModuleEx;
 
@@ -17,16 +18,16 @@ sub define
     $mod->compile("Source/e0_2.cpp");
     $mod->compile("Source/e0_3.cpp",
         sub {
-            my $task = shift;
+            my ($mod, $task) = @_;
             push($task->includePaths, $rootPaths{'Boost'});
         });
     $mod->executable("prog0");
 }
 
-sub compileOverride
+sub setCompileOptions
 {
-    my $mod = shift;
-    my $task = shift;
+    my ($mod, $task) = @_;
+    $mod->SUPER::setCompileOptions($task);
 }
 
 1;
