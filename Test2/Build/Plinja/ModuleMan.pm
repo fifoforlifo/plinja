@@ -3,6 +3,7 @@ use Mouse;
 use File::Basename;
 use Module::Util qw(find_installed);
 use RootPaths;
+use Plinja;
 
 has 'FH' => (is => 'ro');
 
@@ -56,11 +57,47 @@ sub addToolChain
 
 sub emitRules
 {
-    my ($moduleMan, $FH) = @_;
+    my ($moduleMan) = @_;
+    my $FH = $moduleMan->FH;
+
+    print($FH "#############################################\n");
+    print($FH "# CUSTOM_COMMAND\n");
+    print($FH "\n");
+    print($FH "rule CUSTOM_COMMAND\n");
+    print($FH "  command = \$COMMAND \n");
+    print($FH "  description = \$DESC\n");
+    print($FH "  restat = 1\n");
+    print($FH "\n");
 
     while (my ($toolChainName, $toolChain) = each %{$moduleMan->{TOOL_CHAINS}}) {
-        $toolChain->emitRules($moduleMan->FH);
+        $toolChain->emitRules($FH);
     }
+}
+
+# %info = {
+#   COMMAND => "",
+#   DESC => "",
+#   INPUTS => [],
+#   OUTPUTS => [],
+# }
+sub emitCustomCommand
+{
+    my ($moduleMan, $FH, $info) = @_;
+
+    print($FH "build \$\n");
+        for my $output (@{$info->{OUTPUTS}}) {
+            my $outputEsc = Plinja::ninjaEscapePath($output);
+            print($FH "    $outputEsc \$\n");
+        }
+        print($FH "  : CUSTOM_COMMAND");
+        for my $input (@{$info->{INPUTS}}) {
+            my $inputEsc = Plinja::ninjaEscapePath($input);
+            print($FH " \$\n    $inputEsc");
+        }
+        print($FH "\n");
+    print($FH "  COMMAND = ${$info->{COMMAND}}\n");
+    print($FH "  DESC = ${$info->{DESC}}\n");
+    print($FH "\n");
 }
 
 sub getModules

@@ -1,4 +1,5 @@
 package CppToolChain;
+use Mouse;
 use ToolChain;
 use Carp;
 
