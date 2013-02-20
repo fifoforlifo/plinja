@@ -50,7 +50,7 @@ sub setCompileOptions
         }
     }
 
-    if ($mod->variant->{toolChain} =~ m/mingw64/) {
+    if ($mod->variant->{toolChain} =~ m/mingw64|gcc/) {
         if ($mod->variant->{arch} eq "x86") {
             push(@{$task->extraOptions}, "-m32");
         }
@@ -154,7 +154,7 @@ sub setSharedLibraryOptions
 {
     my ($mod, $task) = @_;
 
-    if ($mod->variant->{toolChain} =~ m/mingw64/) {
+    if ($mod->variant->{toolChain} =~ m/mingw64|gcc/) {
         if ($mod->variant->{arch} eq "x86") {
             push(@{$task->extraOptions}, "-m32");
         }
@@ -185,7 +185,7 @@ sub setExecutableOptions
 {
     my ($mod, $task) = @_;
 
-    if ($mod->variant->{toolChain} =~ m/mingw64/) {
+    if ($mod->variant->{toolChain} =~ m/mingw64|gcc/) {
         if ($mod->variant->{arch} eq "x86") {
             push(@{$task->extraOptions}, "-m32");
         }

@@ -21,7 +21,7 @@ $ENV{"PATH"} = "$installDir/bin" . $path_separator . "$oldPath";
 
 sub Link
 {
-    my $cmd = "${prefix}ld${suffix} \"\@$rspFile\" > \"$logFile\" 2>&1";
+    my $cmd = "${prefix}gcc${suffix} \"\@$rspFile\" > \"$logFile\" 2>&1";
     my $exitCode = system($cmd);
     if ($exitCode) {
         my $log = read_file($logFile);

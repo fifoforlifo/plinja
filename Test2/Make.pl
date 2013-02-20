@@ -63,8 +63,12 @@ if ($^O eq "MSWin32") {
 }
 elsif ($^O eq "linux") {
 
-    # ... TODO
+    push(@variants, MyVariant->new(str => "linux.gcc.x86.dbg.dcrt"));
+    push(@variants, MyVariant->new(str => "linux.gcc.amd64.dbg.dcrt"));
+    push(@variants, MyVariant->new(str => "linux.gcc.x86.rel.dcrt"));
+    push(@variants, MyVariant->new(str => "linux.gcc.amd64.rel.dcrt"));
 
+    $moduleMan->addToolChain( GccToolChain->new(name => 'gcc', installDir => '/usr/bin') );
 }
 
 

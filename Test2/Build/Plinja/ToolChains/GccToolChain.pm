@@ -30,7 +30,6 @@ sub emitRules
     if (!$suffix) {
         $suffix = "_NO_SUFFIX_";
     }
-    my $scriptDir = dirname(__FILE__);
 
     print($FH "#############################################\n");
     print($FH "# $name\n");
@@ -149,8 +148,17 @@ sub translateLinkerInputs
     my ($toolChain, $options, $task) = @_;
 
     for my $input (@{$task->inputs}) {
-        my $inputEsc = binutilsEscapePath($input);
-        push(@$options, "\"$inputEsc\"");
+        if ($input =~ ".a\$") {
+            my ($inputFile, $inputDir, $ext) = fileparse($input, qr/\.[^.]*/);
+            my $inputDirEsc = binutilsEscapePath($inputDir);
+            my $libName = substr($inputFile, 3);
+            push(@$options, "-L\"$inputDirEsc\"");
+            push(@$options, "-l$libName");
+        }
+        else {
+            my $inputEsc = binutilsEscapePath($input);
+            push(@$options, "\"$inputEsc\"");
+        }
     }
 }
 
@@ -181,7 +189,7 @@ sub emitStaticLibrary
 
     # generate response file
     my @options = ();
-    push(@options, "rc");                           # replace file entries, and create archive if it didn't exist already
+    push(@options, "rc"); # replace file entries, and create archive if it didn't exist already
     my $outputFileEsc = binutilsEscapePath($task->outputFile);
     push(@options, "\"$outputFileEsc\"");    # first argument is archive name
     $toolChain->translateLinkerInputs(\@options, $task);
@@ -228,7 +236,7 @@ sub emitSharedLibrary
     push(@options, " ");
     push(@options, "-shared");
     my $outputFileEsc = binutilsEscapePath($task->outputFile);
-    push(@options, "-o\"$outputFileEsc\"");
+    push(@options, "-o \"$outputFileEsc\"");
     $toolChain->translateLinkerInputs(\@options, $task);
     if (!$task->keepDebugInfo) {
         push(@options, "--strip-debug");
@@ -271,7 +279,7 @@ sub emitExecutable
     my @options = ();
     push(@options, " ");
     my $outputFileEsc = binutilsEscapePath($task->outputFile);
-    push(@options, "-o\"$outputFileEsc\"");
+    push(@options, "-o \"$outputFileEsc\"");
     $toolChain->translateLinkerInputs(\@options, $task);
     if (!$task->keepDebugInfo) {
         push(@options, "--strip-debug");
