@@ -1,12 +1,13 @@
+#!/usr/bin/perl
 use strict;
-use Cwd;
+use Cwd qw/ abs_path /;
 use Fcntl qw/ LOCK_EX LOCK_NB SEEK_SET /;
 use File::Basename;
 use File::Copy;
 use File::Path;
 use File::Temp qw/ tempfile /;
-use lib dirname(__FILE__) . "/Build/Plinja";
-use lib dirname(__FILE__) . "/Build/Scripts";
+use lib dirname(abs_path(__FILE__)) . "/Build/Plinja";
+use lib dirname(abs_path(__FILE__)) . "/Build/Scripts";
 
 # bootstrap paths to all modules
 use Plinja;
@@ -81,7 +82,7 @@ foreach (@variants) {
     my $prog = $moduleMan->getModule('Prog0', $variant);
 }
 
-Plinja::emitRegeneratorTarget($FH, $ninjaFile, __FILE__, $moduleMan);
+Plinja::emitRegeneratorTarget($FH, $ninjaFile, abs_path(__FILE__), $moduleMan);
 
 print($FH "\n\n");
 

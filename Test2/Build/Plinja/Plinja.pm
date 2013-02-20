@@ -1,6 +1,8 @@
 package Plinja;
+use strict;
 use File::Basename;
 use File::Slurp;
+use File::Spec;
 use File::Path;
 use lib dirname(__FILE__) . "/Tasks";
 use lib dirname(__FILE__) . "/ToolChains";
@@ -38,6 +40,9 @@ sub emitRegeneratorTarget
     }
     print($FH "  : RERUN_MAKE |\$\n");
     while (my ($key, $path) = each %INC) {
+        if (!File::Spec->file_name_is_absolute($path)) {
+            $path = File::Spec->catfile(dirname($rootMakeFile), $path);
+        }
         my $pathEsc = ninjaEscapePath($path);
         print($FH "    $pathEsc \$\n");
     }
