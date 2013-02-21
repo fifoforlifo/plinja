@@ -10,12 +10,17 @@ extends BuildTask;
 has sourceFile => (is => 'ro');
 has objectFile => (is => 'ro');
 has workingDir => (is => 'ro');
+
+# common options (across all toolchains)
+has extraOptions => (is => 'rw', default => "");
 has optLevel => (is => 'rw', default => 0);
 has debugLevel => (is => 'rw', default => 2);
-has dynamicCrt => (is => 'rw', default => 1); # boolean
+# includePaths
+# defines
 
 # msvc-specific options
 has minimalRebuild => (is => 'rw', default => 0);
+has dynamicCrt => (is => 'rw', default => 1); # boolean
 
 sub BUILD
 {
@@ -27,12 +32,19 @@ sub BUILD
         confess "workingDir not defined";
     }
     $task->{INCLUDE_PATHS} = [];
+    $task->{DEFINES} = [];
 }
 
 sub includePaths
 {
     my ($task) = @_;
     return $task->{INCLUDE_PATHS};
+}
+
+sub defines
+{
+    my ($task) = @_;
+    return $task->{DEFINES};
 }
 
 sub outputFile

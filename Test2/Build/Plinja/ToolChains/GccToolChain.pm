@@ -1,4 +1,4 @@
-package MsvcToolChain;
+package GccToolChain;
 use Mouse;
 use CppToolChain;
 use File::Basename;
@@ -6,8 +6,8 @@ use Plinja;
 
 extends CppToolChain;
 
+has prefix => (is => 'ro');
 has installDir => (is => 'ro');
-has arch => (is => 'ro');
 
 
 sub emitRules
@@ -16,7 +16,8 @@ sub emitRules
 
     my $name = $toolChain->name;
     my $installDir = $toolChain->installDir;
-    my $arch = $toolChain->arch;
+    my $prefix = $toolChain->prefix or "_NO_PREFIX_";
+    my $suffix = $toolChain->prefix or "_NO_SUFFIX_";
     my $scriptDir = dirname(__FILE__);
 
     print($FH "#############################################\n");
@@ -24,17 +25,17 @@ sub emitRules
     print($FH "\n");
     print($FH "rule ${name}_cxx\n");
     print($FH "  depfile = \$DEP_FILE\n");
-    print($FH "  command = perl $scriptDir\\msvc-cxx-invoke.pl  \"\$WORKING_DIR\"  \"\$SRC_FILE\"  \"\$OBJ_FILE\"  \"\$DEP_FILE\"  \"\$LOG_FILE\"  \"$installDir\"  $arch  \"\$RSP_FILE\"\n");
+    print($FH "  command = perl $scriptDir\\gcc-cxx-invoke.pl  \"\$WORKING_DIR\"  \"\$SRC_FILE\"  \"\$OBJ_FILE\"  \"\$DEP_FILE\"  \"\$LOG_FILE\"  \"$installDir\"  $prefix  $suffix  \"\$RSP_FILE\"  \n");
     print($FH "  description = ${name}_cxx \$DESC\n");
     print($FH "  restat = 1\n");
     print($FH "\n");
     print($FH "rule ${name}_lib\n");
-    print($FH "  command = perl $scriptDir\\msvc-lib-invoke.pl  \"\$WORKING_DIR\"  \"\$LOG_FILE\"  \"$installDir\"  $arch  \"\$RSP_FILE\"\n");
+    print($FH "  command = perl $scriptDir\\gcc-ar-invoke.pl  \"\$WORKING_DIR\"  \"\$LOG_FILE\"  \"$installDir\"  $prefix  $suffix  \"\$RSP_FILE\"  \n");
     print($FH "  description = ${name}_lib \$DESC\n");
     print($FH "  restat = 1\n");
     print($FH "\n");
     print($FH "rule ${name}_link\n");
-    print($FH "  command = perl $scriptDir\\msvc-link-invoke.pl  \"\$WORKING_DIR\"  \"\$LOG_FILE\"  \"$installDir\"  $arch  \"\$RSP_FILE\"\n");
+    print($FH "  command = perl $scriptDir\\gcc-ld-invoke.pl  \"\$WORKING_DIR\"  \"\$LOG_FILE\"  \"$installDir\"  $prefix  $suffix  \"\$RSP_FILE\"  \n");
     print($FH "  description = ${name}_link \$DESC\n");
     print($FH "  restat = 1\n");
     print($FH "\n");
@@ -43,14 +44,8 @@ sub emitRules
 sub translateOptLevel
 {
     my ($toolChain, $options, $task) = @_;
-    if ($task->optLevel == 0) {
-        push(@$options, "/Od"); # optimizations disabled
-    }
-    elsif (1 <= $task->optLevel && $task->optLevel <= 2) {
-        push(@$options, "/O${\$task->optLevel}");
-    }
-    elsif ($task->optLevel == 3) {
-        push(@$options, "/Ox");
+    if (0 <= $task->optLevel && $task->optLevel <= 3) {
+        push(@$options, "-O${\$task->optLevel}");
     }
     else {
         confess("invalid optimization level ${\$task->optLevel}");
@@ -64,25 +59,8 @@ sub translateDebugLevel
         confess("invalid debug level ${\$task->debugLevel}");
     }
 
-    if ($task->debugLevel == 0) {
-        return;
-    }
-
-    if ($task->debugLevel == 1) {
-        push(@$options, "/Zd"); # line info
-    }
-    elsif ($task->debugLevel == 2) {
-        push(@$options, "/Zi"); # full debug info
-    }
-    elsif ($task->debugLevel == 3) {
-        push(@$options, "/Zi"); # edit-and-continue
-    }
-    # rename PDB file
-    push(@$options, "\"/Fd${\$task->outputFile}.pdb\"");
-
-    if ($task->minimalRebuild) {
-        push(@$options, "/Gm");
-    }
+    push(@$options, "-g${\$task->debugLevel}");
+    # "minimalRebuild" is not supported on gcc
 }
 
 sub translateIncludePaths
@@ -90,8 +68,8 @@ sub translateIncludePaths
     my ($toolChain, $options, $task) = @_;
     foreach (@{$task->includePaths}) {
         my $includePath = $_;
-        confess "empty includePath for ${\$task->outputFile}" if (!$includePath);
-        push(@$options, "/I\"$includePath\"");
+        confess "${\$task->outputFile}" if (!$includePath);
+        push(@$options, "-I\"$includePath\"");
     }
 }
 
@@ -101,28 +79,7 @@ sub translateDefines
     foreach (@{$task->defines}) {
         my $define = $_;
         confess "empty define for ${\$task->outputFile}" if (!$define);
-        push(@$options, "/D\"$define\"");
-    }
-}
-
-sub translateDynamicCrt
-{
-    my ($toolChain, $options, $task) = @_;
-    if ($task->optLevel == 0) {
-        if ($task->dynamicCrt) {
-            push(@$options, "/MDd");
-        }
-        else {
-            push(@$options, "/MTd");
-        }
-    }
-    else { # it's an optimized build
-        if ($task->dynamicCrt) {
-            push(@$options, "/MD");
-        }
-        else {
-            push(@$options, "/MT");
-        }
+        push(@$options, "-D\"$define\"");
     }
 }
 
@@ -138,14 +95,14 @@ sub emitCompile
     my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $sourceFileName = basename($task->sourceFile);
     my $outputFileName = basename($task->outputFile);
-    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-cxx-invoke.pl");
+    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir/gcc-cxx-invoke.pl");
 
     my $debugOutputs = "";
     if ($task->debugLevel >= 1) {
         $debugOutputs = $debugOutputs . " $outputFile.pdb";
-        if ($task->minimalRebuild) {
-            $debugOutputs = $debugOutputs . " $outputFile.idb";
-        }
+    }
+    if ($task->minimalRebuild) {
+        $debugOutputs = $debugOutputs . " $outputFile.idb";
     }
 
     print($FH "build $outputFile $debugOutputs $logFile : ${name}_cxx  $sourceFile | $outputFile.rsp $scriptFile\n");
@@ -160,11 +117,9 @@ sub emitCompile
 
     # generate response file
     my @options = ();
-    push(@options, "/nologo");
-    push(@options, "/c");
+    push(@options, "-c");
     $toolChain->translateOptLevel(\@options, $task);
     $toolChain->translateDebugLevel(\@options, $task);
-    $toolChain->translateDynamicCrt(\@options, $task);
     # add path lists last to make the major options easier to see
     $toolChain->translateIncludePaths(\@options, $task);
     $toolChain->translateDefines(\@options, $task);
@@ -185,7 +140,7 @@ sub emitStaticLibrary
     my $outputFile = Plinja::ninjaEscapePath($task->outputFile);
     my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
-    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-lib-invoke.pl");
+    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir/gcc-ar-invoke.pl");
 
     print($FH "\n");
     print($FH "build $outputFile $logFile : ${name}_lib | $outputFile.rsp $scriptFile");
@@ -202,12 +157,11 @@ sub emitStaticLibrary
 
     # generate response file
     my @options = ();
-    push(@options, "/nologo");
-    push(@options, "\"/OUT:${\$task->outputFile}\"");
+    push(@options, "rc");                           # replace file entries, and create archive if it didn't exist already
+    push(@options, "\"${\$task->outputFile}\"");    # first argument is archive name
     for my $input (@{$task->inputs}) {
-        push(@options, $input);
+        push(@options, "$input");
     }
-    push(@options, $task->extraOptions);
     my $rspContents = join(' ', @options);
     Plinja::writeFileIfDifferent($task->outputFile . '.rsp', $rspContents);
 
@@ -218,7 +172,6 @@ sub translateLinkerInputs
 {
     my ($toolChain, $options, $task) = @_;
 
-    # MSVC doesn't require breaking apart into library path and filename.
     for my $input (@{$task->inputs}) {
         push(@$options, "\"$input\"");
     }
@@ -238,10 +191,10 @@ sub emitSharedLibrary
     }
     my $logFile     = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
-    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-link-invoke.pl");
+    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir/gcc-ld-invoke.pl");
 
     print($FH "\n");
-    print($FH "build $outputFile $libraryFile $logFile : ${name}_link | $outputFile.rsp $scriptFile");
+    print($FH "build $outputFile $libraryFile $logFile : ${name}_link | $scriptFile");
         foreach (@{$task->inputs}) {
             my $input = $_;
             next if (!File::Spec->file_name_is_absolute($input));
@@ -257,14 +210,22 @@ sub emitSharedLibrary
 
     # generate response file
     my @options = ();
-    push(@options, "/nologo");
-    push(@options, "/DLL");
-    push(@options, "\"/OUT:${\$task->outputFile}\"");
+    push(@options, "-shared");
+    push(@options, "-o \"${\$task->outputFile}\"");
+    # for my $input (@{$task->inputs}) {
+        # if ($input =~ m/[.]lib$/) {
+            # my $libpath = dirname($input);
+            # my $libname = basename($input);
+            # push(@options, " \"/LIBPATH:$libpath\" \"$libname\"");
+        # }
+        # else {
+            # push(@options, " \"$input\"");
+        # }
+    # }
     $toolChain->translateLinkerInputs(\@options, $task);
-    if ($task->keepDebugInfo) {
-        push(@options, "/DEBUG");
+    if (!$task->keepDebugInfo) {
+        push(@options, "--strip-debug");
     }
-    push(@options, $task->extraOptions);
     my $rspContents = join(' ', @options);
     Plinja::writeFileIfDifferent($task->outputFile . '.rsp', $rspContents);
 
@@ -281,10 +242,10 @@ sub emitExecutable
     my $outputFile = Plinja::ninjaEscapePath($task->outputFile);
     my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
-    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-link-invoke.pl");
+    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir/gcc-ld-invoke.pl");
 
     print($FH "\n");
-    print($FH "build $outputFile $logFile : ${name}_link | $outputFile.rsp $scriptFile");
+    print($FH "build $outputFile $logFile : ${name}_link | $scriptFile");
         foreach (@{$task->inputs}) {
             my $input = $_;
             next if (!File::Spec->file_name_is_absolute($input));
@@ -300,14 +261,12 @@ sub emitExecutable
 
     # generate response file
     my @options = ();
-    push(@options, "/nologo");
-    push(@options, "\"/OUT:${\$task->outputFile}\"");
+    push(@options, "-o \"${\$task->outputFile}\"");
     $toolChain->translateLinkerInputs(\@options, $task);
-    if ($task->keepDebugInfo) {
-        push(@options, "/DEBUG");
+    if (!$task->keepDebugInfo) {
+        push(@options, "--strip-debug");
     }
-    push(@options, $task->extraOptions);
-    my $rspContents = join(' ', @options);
+    my $rspContents = join('', @options);
     Plinja::writeFileIfDifferent($task->outputFile . '.rsp', $rspContents);
 
     push(@{$mod->makeFiles}, $task->outputFile . '.rsp');

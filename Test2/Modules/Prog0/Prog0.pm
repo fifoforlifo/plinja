@@ -19,7 +19,7 @@ sub define
     $mod->compile("Source/e0_3.cpp",
         sub {
             my ($mod, $task) = @_;
-            push($task->includePaths, $rootPaths{'Boost'});
+            push(@{$task->includePaths}, $rootPaths{'Boost'});
         });
     $mod->executable("prog0");
 }
@@ -28,6 +28,9 @@ sub setCompileOptions
 {
     my ($mod, $task) = @_;
     $mod->SUPER::setCompileOptions($task);
+    push(@{$task->includePaths}, $rootPaths{'LibA0'} . '/Include');
+    push(@{$task->includePaths}, $rootPaths{'LibA0'} . '/IncludeSpecial');
+    push(@{$task->includePaths}, $rootPaths{'LibA1'} . '/Include');
 }
 
 1;

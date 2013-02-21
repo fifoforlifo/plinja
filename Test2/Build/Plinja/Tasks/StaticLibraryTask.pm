@@ -8,6 +8,9 @@ extends BuildTask;
 has outputFile => (is => 'ro');
 has workingDir => (is => 'ro');
 
+# common options (across all toolchains)
+has extraOptions => (is => 'rw', default => "");
+
 sub BUILD
 {
     my $task = shift;

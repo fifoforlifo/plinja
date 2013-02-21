@@ -56,7 +56,7 @@ sub addStaticLibrary
 sub addInputFile
 {
     my ($mod, $filename) = @_;
-    push($mod->{INPUTS}, $filename);
+    push(@{$mod->{INPUTS}}, $filename);
 }
 
 sub compile
@@ -116,7 +116,7 @@ sub staticLibrary
     }
     foreach (@{$mod->{INPUTS}}) {
         my $input = $_;
-        push($task->{INPUTS}, $input);
+        push(@{$task->inputs}, $input);
     }
     $task->emit($mod->toolChain, $mod->moduleMan->FH, $mod);
 
@@ -157,7 +157,7 @@ sub sharedLibrary
     }
     foreach (@{$mod->{INPUTS}}) {
         my $input = $_;
-        push($task->{INPUTS}, $input);
+        push(@{$task->inputs}, $input);
     }
     $task->emit($mod->toolChain, $mod->moduleMan->FH, $mod);
 
@@ -197,7 +197,7 @@ sub executable
     }
     foreach (@{$mod->{INPUTS}}) {
         my $input = $_;
-        push($task->inputs, $input);
+        push(@{$task->inputs}, $input);
     }
     $task->emit($mod->toolChain, $mod->moduleMan->FH, $mod);
 

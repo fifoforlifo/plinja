@@ -15,7 +15,7 @@ sub ninjaEscapePath
 
 sub emitRegeneratorTarget
 {
-    my ($FH, $ninjaFile, $makeFile, $moduleMan) = @_;
+    my ($FH, $ninjaFile, $rootMakeFile, $moduleMan) = @_;
 
     my $ninjaFileEsc = ninjaEscapePath($ninjaFile);
     my $modules = $moduleMan->getModules();
@@ -23,7 +23,7 @@ sub emitRegeneratorTarget
     print($FH "#############################################\n");
     print($FH "# Remake build.ninja if any perl sources changed.\n");
     print($FH "rule RERUN_MAKE\n");
-    print($FH "  command = perl \"$makeFile\"\n");
+    print($FH "  command = perl \"$rootMakeFile\"\n");
     print($FH "  description = Re-running Make script.\n");
     print($FH "  generator = 1\n");
     print($FH "  restat = 1\n");
@@ -36,11 +36,13 @@ sub emitRegeneratorTarget
             print($FH "  $path \$\n");
         }
     }
-    print($FH "  : RERUN_MAKE |");
+    print($FH "  : RERUN_MAKE |\$\n");
     while (my ($key, $path) = each %INC) {
         my $pathEsc = ninjaEscapePath($path);
-        print($FH " \$\n    $pathEsc");
+        print($FH "    $pathEsc \$\n");
     }
+    my $rootMakeFileEsc = ninjaEscapePath($rootMakeFile);
+    print($FH "    $rootMakeFileEsc\n");
     print($FH "\n");
     print($FH "\n");
 }

@@ -28,7 +28,7 @@ sub setCompileOptions
     my ($mod, $task) = @_;
 
     if ($mod->variant->{os} eq "windows") {
-        push($task->includePaths, $rootPaths{'winsdk'} . "/Include");
+        push(@{$task->includePaths}, $rootPaths{'winsdk'} . "/Include");
     }
 
     if ($mod->variant->{config} eq "dbg") {
@@ -41,7 +41,7 @@ sub setCompileOptions
 
     $task->debugLevel(2);
     if ($mod->variant->{config} eq "dbg") {
-        $task->minimalRebuild(1);
+        #$task->minimalRebuild(1);
     }
 }
 
@@ -68,9 +68,9 @@ sub addPlatformLibs
     my ($mod, $task) = @_;
     if ($mod->variant->{os} eq "windows") {
         my $winsdkLibDir = $mod->calcWinsdkLibDir();
-        push($task->inputs, $winsdkLibDir . "kernel32.lib");
-        push($task->inputs, $winsdkLibDir . "user32.lib");
-        push($task->inputs, $winsdkLibDir . "gdi32.lib");
+        push(@{$task->inputs}, $winsdkLibDir . "kernel32.lib");
+        push(@{$task->inputs}, $winsdkLibDir . "user32.lib");
+        push(@{$task->inputs}, $winsdkLibDir . "gdi32.lib");
     }
 }
 

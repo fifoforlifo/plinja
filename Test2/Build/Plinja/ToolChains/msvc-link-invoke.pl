@@ -3,7 +3,7 @@ use English;
 use File::Slurp;
 use Carp;
 
-my ($workingDir, $logFile, $vsInstallDir, $arch, $rspFile) = @ARGV;
+my ($workingDir, $logFile, $installDir, $arch, $rspFile) = @ARGV;
 
 # validate environment
 die "msvc is only usable on windows" if ($OSNAME ne "MSWin32");
@@ -25,19 +25,19 @@ sub isOs64Bit
 chdir($workingDir);
 
 my $oldPath = $ENV{"PATH"};
-$ENV{"INCLUDE"} = "$vsInstallDir\\VC\\include";
+$ENV{"INCLUDE"} = "$installDir\\VC\\include";
 if ($arch eq "x86") {
-    $ENV{"PATH"} = "$vsInstallDir\\VC\\bin;$vsInstallDir\\Common7\\IDE;$oldPath";
-    $ENV{"LIB"} = "$vsInstallDir\\VC\\lib";
+    $ENV{"PATH"} = "$installDir\\VC\\bin;$installDir\\Common7\\IDE;$oldPath";
+    $ENV{"LIB"} = "$installDir\\VC\\lib";
 }
 elsif ($arch eq "amd64") {
     if (isOs64Bit()) {
-        $ENV{"PATH"} = "$vsInstallDir\\VC\\bin\\amd64;$vsInstallDir\\Common7\\IDE;$oldPath";
+        $ENV{"PATH"} = "$installDir\\VC\\bin\\amd64;$installDir\\Common7\\IDE;$oldPath";
     }
     else {
-        $ENV{"PATH"} = "$vsInstallDir\\VC\\bin\\x86_amd64;$vsInstallDir\\Common7\\IDE;$oldPath";
+        $ENV{"PATH"} = "$installDir\\VC\\bin\\x86_amd64;$installDir\\Common7\\IDE;$oldPath";
     }
-    $ENV{"LIB"} = "$vsInstallDir\\VC\\lib\\amd64";
+    $ENV{"LIB"} = "$installDir\\VC\\lib\\amd64";
 }
 
 sub Link()
