@@ -99,13 +99,6 @@ sub staticLibrary
         die "You must specify an outputFileName parameter.";
     }
 
-    if ($mod->variant->{os} eq "windows") {
-        $outputFileName = $outputFileName . ".lib";
-    }
-    else {
-        $outputFileName = 'lib' . $outputFileName . '.a';
-    }
-
     my $outputFile = File::Spec->catfile($mod->outputDir, $outputFileName);
     $mod->{LIBRARY_FILE} = $outputFile;
 
@@ -131,23 +124,13 @@ sub setStaticLibraryOptions
 
 sub sharedLibrary
 {
-    my ($mod, $outputFileName, $lambda) = @_;
+    my ($mod, $outputFile, $lambda) = @_;
 
     if ($mod->{OUTPUT}) {
         die "Output already selected: $mod->{OUTPUT}";
     }
-    if (!$outputFileName) {
+    if (!$outputFile) {
         die "You must specify an outputFileName parameter.";
-    }
-
-    my $outputFile;
-    if ($mod->variant->{os} eq "windows") {
-        $mod->{LIBRARY_FILE} = File::Spec->catfile($mod->outputDir, $outputFileName . ".lib");
-        $outputFile          = File::Spec->catfile($mod->outputDir, $outputFileName . ".dll");
-    }
-    else {
-        $outputFile          = File::Spec->catfile($mod->outputDir, 'lib' . $outputFileName . '.so');
-        $mod->{LIBRARY_FILE} = $outputFile;
     }
 
     my $task = new SharedLibraryTask(outputFile => $outputFile, libraryFile => $mod->{LIBRARY_FILE}, workingDir => $mod->{MODULE_DIR});
@@ -179,13 +162,6 @@ sub executable
     }
     if (!$outputFileName) {
         die "You must specify an outputFileName parameter.";
-    }
-
-    if ($mod->variant->{os} eq "windows") {
-        $outputFileName = $outputFileName . ".exe";
-    }
-    else {
-        # just use the plain name
     }
 
     my $outputFile = File::Spec->catfile($mod->outputDir, $outputFileName);

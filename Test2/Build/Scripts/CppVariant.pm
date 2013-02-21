@@ -6,7 +6,7 @@ extends Variant;
 
 my $_fieldDefs = [
     os          => ['windows', 'linux', 'darwin'],
-    toolChain   => ['msvc9', 'msvc10', 'msvc11', 'mingw', 'gcc'],
+    toolChain   => ['msvc9', 'msvc10', 'msvc11', 'mingw64', 'gcc'],
     arch        => ['x86', 'amd64'],
     config      => ['dbg', 'rel'],
     crt         => ['scrt', 'dcrt'],

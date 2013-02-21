@@ -12,11 +12,7 @@ if (scalar(@ARGV) != 6) {
 $prefix = "" if ($prefix eq "_NO_PREFIX_");
 $suffix = "" if ($suffix eq "_NO_SUFFIX_");
 
-sub path_separator
-{
-    return ';' if ($OSNAME eq "MSWin32");
-    return ':';
-}
+my $path_separator = ($OSNAME eq "MSWin32") ? ';' : ':';
 
 chdir($workingDir);
 

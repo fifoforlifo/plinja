@@ -12,7 +12,7 @@ has objectFile => (is => 'ro');
 has workingDir => (is => 'ro');
 
 # common options (across all toolchains)
-has extraOptions => (is => 'rw', default => "");
+has extraOptions => (is => 'ro', default => sub { [] });
 has optLevel => (is => 'rw', default => 0);
 has debugLevel => (is => 'rw', default => 2);
 # includePaths
@@ -33,6 +33,7 @@ sub BUILD
     }
     $task->{INCLUDE_PATHS} = [];
     $task->{DEFINES} = [];
+    $task->{EXTRA_OPTIONS} = [];
 }
 
 sub includePaths

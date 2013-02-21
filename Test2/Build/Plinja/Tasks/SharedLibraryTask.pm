@@ -9,7 +9,7 @@ has libraryFile => (is => 'ro');
 has workingDir => (is => 'ro');
 
 # common options (across all toolchains)
-has extraOptions => (is => 'rw', default => "");
+has extraOptions => (is => 'ro', default => sub { [] });
 has keepDebugInfo => (is => 'rw', default => 1);
 
 sub BUILD

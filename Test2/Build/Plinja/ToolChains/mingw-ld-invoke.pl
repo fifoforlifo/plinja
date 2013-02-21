@@ -19,9 +19,9 @@ chdir($workingDir);
 my $oldPath = $ENV{"PATH"};
 $ENV{"PATH"} = "$installDir/bin" . $path_separator . "$oldPath";
 
-sub CreateLib()
+sub Link
 {
-    my $cmd = "${prefix}ar${suffix} \"\@$rspFile\" > \"$logFile\" 2>&1";
+    my $cmd = "${prefix}gcc${suffix} \"\@$rspFile\" > \"$logFile\" 2>&1";
     my $exitCode = system($cmd);
     if ($exitCode) {
         my $log = read_file($logFile);
@@ -30,6 +30,6 @@ sub CreateLib()
     }
 }
 
-CreateLib();
+Link();
 
 exit 0;

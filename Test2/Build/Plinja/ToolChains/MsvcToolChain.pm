@@ -9,6 +9,11 @@ extends CppToolChain;
 has installDir => (is => 'ro');
 has arch => (is => 'ro');
 
+my $scriptDir = dirname(__FILE__);
+my $cxx_script = "$scriptDir\\msvc-cxx-invoke.pl";
+my $lib_script = "$scriptDir\\msvc-lib-invoke.pl";
+my $link_script = "$scriptDir\\msvc-link-invoke.pl";
+
 
 sub emitRules
 {
@@ -24,17 +29,17 @@ sub emitRules
     print($FH "\n");
     print($FH "rule ${name}_cxx\n");
     print($FH "  depfile = \$DEP_FILE\n");
-    print($FH "  command = perl $scriptDir\\msvc-cxx-invoke.pl  \"\$WORKING_DIR\"  \"\$SRC_FILE\"  \"\$OBJ_FILE\"  \"\$DEP_FILE\"  \"\$LOG_FILE\"  \"$installDir\"  $arch  \"\$RSP_FILE\"\n");
+    print($FH "  command = perl \"$cxx_script\"  \"\$WORKING_DIR\"  \"\$SRC_FILE\"  \"\$OBJ_FILE\"  \"\$DEP_FILE\"  \"\$LOG_FILE\"  \"$installDir\"  $arch  \"\$RSP_FILE\"\n");
     print($FH "  description = ${name}_cxx \$DESC\n");
     print($FH "  restat = 1\n");
     print($FH "\n");
     print($FH "rule ${name}_lib\n");
-    print($FH "  command = perl $scriptDir\\msvc-lib-invoke.pl  \"\$WORKING_DIR\"  \"\$LOG_FILE\"  \"$installDir\"  $arch  \"\$RSP_FILE\"\n");
+    print($FH "  command = perl \"$lib_script\"  \"\$WORKING_DIR\"  \"\$LOG_FILE\"  \"$installDir\"  $arch  \"\$RSP_FILE\"\n");
     print($FH "  description = ${name}_lib \$DESC\n");
     print($FH "  restat = 1\n");
     print($FH "\n");
     print($FH "rule ${name}_link\n");
-    print($FH "  command = perl $scriptDir\\msvc-link-invoke.pl  \"\$WORKING_DIR\"  \"\$LOG_FILE\"  \"$installDir\"  $arch  \"\$RSP_FILE\"\n");
+    print($FH "  command = perl \"$link_script\"  \"\$WORKING_DIR\"  \"\$LOG_FILE\"  \"$installDir\"  $arch  \"\$RSP_FILE\"\n");
     print($FH "  description = ${name}_link \$DESC\n");
     print($FH "  restat = 1\n");
     print($FH "\n");
@@ -138,7 +143,7 @@ sub emitCompile
     my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $sourceFileName = basename($task->sourceFile);
     my $outputFileName = basename($task->outputFile);
-    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-cxx-invoke.pl");
+    my $scriptFile = Plinja::ninjaEscapePath($cxx_script);
 
     my $debugOutputs = "";
     if ($task->debugLevel >= 1) {
@@ -168,7 +173,7 @@ sub emitCompile
     # add path lists last to make the major options easier to see
     $toolChain->translateIncludePaths(\@options, $task);
     $toolChain->translateDefines(\@options, $task);
-    push(@options, $task->extraOptions);
+    push(@options, @{$task->extraOptions});
     my $rspContents = join(' ', @options);
     Plinja::writeFileIfDifferent($task->outputFile . '.rsp', $rspContents);
 
@@ -185,7 +190,7 @@ sub emitStaticLibrary
     my $outputFile = Plinja::ninjaEscapePath($task->outputFile);
     my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
-    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-lib-invoke.pl");
+    my $scriptFile = Plinja::ninjaEscapePath($lib_script);
 
     print($FH "\n");
     print($FH "build $outputFile $logFile : ${name}_lib | $outputFile.rsp $scriptFile");
@@ -205,9 +210,9 @@ sub emitStaticLibrary
     push(@options, "/nologo");
     push(@options, "\"/OUT:${\$task->outputFile}\"");
     for my $input (@{$task->inputs}) {
-        push(@options, $input);
+        push(@options, "\"$input\"");
     }
-    push(@options, $task->extraOptions);
+    push(@options, @{$task->extraOptions});
     my $rspContents = join(' ', @options);
     Plinja::writeFileIfDifferent($task->outputFile . '.rsp', $rspContents);
 
@@ -238,7 +243,7 @@ sub emitSharedLibrary
     }
     my $logFile     = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
-    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-link-invoke.pl");
+    my $scriptFile = Plinja::ninjaEscapePath($link_script);
 
     print($FH "\n");
     print($FH "build $outputFile $libraryFile $logFile : ${name}_link | $outputFile.rsp $scriptFile");
@@ -264,7 +269,7 @@ sub emitSharedLibrary
     if ($task->keepDebugInfo) {
         push(@options, "/DEBUG");
     }
-    push(@options, $task->extraOptions);
+    push(@options, @{$task->extraOptions});
     my $rspContents = join(' ', @options);
     Plinja::writeFileIfDifferent($task->outputFile . '.rsp', $rspContents);
 
@@ -281,7 +286,7 @@ sub emitExecutable
     my $outputFile = Plinja::ninjaEscapePath($task->outputFile);
     my $logFile    = Plinja::ninjaEscapePath($task->outputFile . ".log");
     my $outputFileName = basename($task->outputFile);
-    my $scriptFile = Plinja::ninjaEscapePath("$scriptDir\\msvc-link-invoke.pl");
+    my $scriptFile = Plinja::ninjaEscapePath($link_script);
 
     print($FH "\n");
     print($FH "build $outputFile $logFile : ${name}_link | $outputFile.rsp $scriptFile");
@@ -306,7 +311,7 @@ sub emitExecutable
     if ($task->keepDebugInfo) {
         push(@options, "/DEBUG");
     }
-    push(@options, $task->extraOptions);
+    push(@options, @{$task->extraOptions});
     my $rspContents = join(' ', @options);
     Plinja::writeFileIfDifferent($task->outputFile . '.rsp', $rspContents);
 

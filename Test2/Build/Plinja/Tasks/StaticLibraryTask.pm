@@ -9,7 +9,7 @@ has outputFile => (is => 'ro');
 has workingDir => (is => 'ro');
 
 # common options (across all toolchains)
-has extraOptions => (is => 'rw', default => "");
+has extraOptions => (is => 'ro', default => sub { [] });
 
 sub BUILD
 {
