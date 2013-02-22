@@ -7,7 +7,7 @@ use Plinja;
 
 has 'FH' => (is => 'ro');
 
-sub getModule
+sub findModule
 {
     my ($moduleMan, $moduleName, $variant) = @_;
 
@@ -15,12 +15,12 @@ sub getModule
     return $mod;
 }
 
-# get-or-create Module
-sub gorcModule
+# get or create module for $variant
+sub getModule
 {
     my ($moduleMan, $moduleName, $variant) = @_;
 
-    my $mod = $moduleMan->getModule($moduleName, $variant);
+    my $mod = $moduleMan->findModule($moduleName, $variant);
     if ($mod) {
         return $mod;
     }

@@ -47,7 +47,7 @@ sub libraryFile
     return $mod->{LIBRARY_FILE};
 }
 
-sub addStaticLibrary
+sub addInputLibrary
 {
     my ($mod, $libFile) = @_;
     $mod->addInputFile($libFile);

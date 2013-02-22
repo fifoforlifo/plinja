@@ -73,7 +73,7 @@ print($FH "\n");
 # Add top-level target modules.
 foreach (@variants) {
     my $variant = $_;
-    my $prog = $moduleMan->gorcModule('Prog0', $variant);
+    my $prog = $moduleMan->getModule('Prog0', $variant);
 }
 
 Plinja::emitRegeneratorTarget($FH, $ninjaFile, __FILE__, $moduleMan);
