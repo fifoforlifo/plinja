@@ -32,35 +32,40 @@ flock($LOCKFH, LOCK_EX | LOCK_NB) or die "another build process is concurrently 
 my $FH = tempfile() or die "Failed to create temp file for new build.ninja";
 
 
-
-my @variants = ();
-#push(@variants, MyVariant->new(str => "windows.msvc9.x86.dbg.dcrt"));
-#push(@variants, MyVariant->new(str => "windows.msvc9.x86.rel.dcrt"));
-#push(@variants, MyVariant->new(str => "windows.msvc9.amd64.dbg.dcrt"));
-#push(@variants, MyVariant->new(str => "windows.msvc9.amd64.rel.dcrt"));
-#push(@variants, MyVariant->new(str => "windows.msvc10.x86.dbg.dcrt"));
-#push(@variants, MyVariant->new(str => "windows.msvc10.x86.rel.dcrt"));
-#push(@variants, MyVariant->new(str => "windows.msvc10.amd64.dbg.dcrt"));
-#push(@variants, MyVariant->new(str => "windows.msvc10.amd64.rel.dcrt"));
-push(@variants, MyVariant->new(str => "windows.mingw64.x86.dbg.dcrt"));
-push(@variants, MyVariant->new(str => "windows.mingw64.x86.rel.dcrt"));
-push(@variants, MyVariant->new(str => "windows.mingw64.amd64.dbg.dcrt"));
-push(@variants, MyVariant->new(str => "windows.mingw64.amd64.rel.dcrt"));
-
 # Create the module manager, which tracks all modules (projects) being built.
 my $moduleMan = ModuleMan->new(FH => $FH);
 
-# Create toolchains.
-my $msvc9_x86    = MsvcToolChain->new( name => 'msvc9_x86',    installDir => $rootPaths{'msvc10_root'},  arch => 'x86');
-my $msvc9_amd64  = MsvcToolChain->new( name => 'msvc9_amd64',  installDir => $rootPaths{'msvc10_root'},  arch => 'amd64');
-my $msvc10_x86   = MsvcToolChain->new( name => 'msvc10_x86',   installDir => $rootPaths{'msvc10_root'},  arch => 'x86');
-my $msvc10_amd64 = MsvcToolChain->new( name => 'msvc10_amd64', installDir => $rootPaths{'msvc10_root'},  arch => 'amd64');
-my $mingw64      = MinGWToolChain->new(name => 'mingw64',      installDir => $rootPaths{'mingw64_root'});
-$moduleMan->addToolChain($msvc9_x86);
-$moduleMan->addToolChain($msvc9_amd64);
-$moduleMan->addToolChain($msvc10_x86);
-$moduleMan->addToolChain($msvc10_amd64);
-$moduleMan->addToolChain($mingw64);
+
+# define variants and toolchains on a per-OS basis
+my @variants = ();
+
+if ($^O eq "MSWin32") {
+    # note: some of these variants are disabled just to make testing go faster -- they should all work if enabled
+    push(@variants, MyVariant->new(str => "windows.msvc9.x86.dbg.dcrt"));
+    push(@variants, MyVariant->new(str => "windows.msvc9.x86.rel.dcrt"));
+    #push(@variants, MyVariant->new(str => "windows.msvc9.amd64.dbg.dcrt"));
+    #push(@variants, MyVariant->new(str => "windows.msvc9.amd64.rel.dcrt"));
+    #push(@variants, MyVariant->new(str => "windows.msvc10.x86.dbg.dcrt"));
+    push(@variants, MyVariant->new(str => "windows.msvc10.x86.rel.dcrt"));
+    #push(@variants, MyVariant->new(str => "windows.msvc10.amd64.dbg.dcrt"));
+    push(@variants, MyVariant->new(str => "windows.msvc10.amd64.rel.dcrt"));
+    push(@variants, MyVariant->new(str => "windows.mingw64.x86.dbg.dcrt"));
+    push(@variants, MyVariant->new(str => "windows.mingw64.x86.rel.dcrt"));
+    push(@variants, MyVariant->new(str => "windows.mingw64.amd64.dbg.dcrt"));
+    push(@variants, MyVariant->new(str => "windows.mingw64.amd64.rel.dcrt"));
+
+    $moduleMan->addToolChain( MsvcToolChain->new( name => 'msvc9_x86',    installDir => $rootPaths{'msvc9_root'},  arch => 'x86')   );
+    $moduleMan->addToolChain( MsvcToolChain->new( name => 'msvc9_amd64',  installDir => $rootPaths{'msvc9_root'},  arch => 'amd64') );
+    $moduleMan->addToolChain( MsvcToolChain->new( name => 'msvc10_x86',   installDir => $rootPaths{'msvc10_root'}, arch => 'x86')   );
+    $moduleMan->addToolChain( MsvcToolChain->new( name => 'msvc10_amd64', installDir => $rootPaths{'msvc10_root'}, arch => 'amd64') );
+    $moduleMan->addToolChain( MinGWToolChain->new(name => 'mingw64',      installDir => $rootPaths{'mingw64_root'}) );
+}
+elsif ($^O eq "linux") {
+
+    # ... TODO
+
+}
+
 
 
 # Begin emitting build.ninja contents.

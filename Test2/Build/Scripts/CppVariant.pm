@@ -4,13 +4,29 @@ use Variant;
 
 extends Variant;
 
-my $_fieldDefs = [
-    os          => ['windows', 'linux', 'darwin'],
-    toolChain   => ['msvc9', 'msvc10', 'msvc11', 'mingw64', 'gcc'],
-    arch        => ['x86', 'amd64'],
-    config      => ['dbg', 'rel'],
-    crt         => ['scrt', 'dcrt'],
-];
+my $_fieldDefs;
+
+if ($^O eq "MSWin32") {
+    $_fieldDefs = [
+        os          => ['windows'],
+        toolChain   => ['msvc9', 'msvc10', 'msvc11', 'mingw64'],
+        arch        => ['x86', 'amd64'],
+        config      => ['dbg', 'rel'],
+        crt         => ['scrt', 'dcrt'],
+    ];
+}
+elsif ($^O eq "linux") {
+    $_fieldDefs = [
+        os          => ['linux'],
+        toolChain   => ['gcc'],
+        arch        => ['x86', 'amd64'],
+        config      => ['dbg', 'rel'],
+        crt         => ['scrt', 'dcrt'],
+    ];
+}
+else {
+    die "unsupported build OS";
+}
 
 sub getFieldDefs
 {
